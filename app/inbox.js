@@ -2,7 +2,7 @@
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/inbox.js'] = '2026-11-21.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/inbox.js'] = '2026-11-21.02';
 /* ------------------------------------------------------------ the Inbox */
 // Works you came across (cited in a paper you're reading, say) and want to
 // look at before deciding to keep them: their details, where you found
@@ -105,12 +105,15 @@ function ibEntry(x) {
   const was = INBOX.cache.get(x.id);
   if (was && was.inbox === x) return was;
   const people = (x.people || []).map(p => { const [fam, giv] = String(p).split(','); return [String(fam || '').trim(), String(giv || '').trim()]; }).filter(p => p[0]);
-  const t = x.type === 'book' ? 'book' : x.type === 'chapter' || x.type === 'incollection' ? 'incollection' : 'article';
-  const venueField = t === 'book' ? 'publisher' : t === 'incollection' ? 'booktitle' : 'journal';
+  const t = TYPE_NAMES[x.type] ? x.type : x.type === 'chapter' ? 'incollection' : 'article';
+  const venueField = t === 'book' ? 'publisher' : /^(incollection|inbook|inproceedings|conference)$/.test(t) ? 'booktitle' : t === 'article' ? 'journal' : 'howpublished';
+  // (As shown in a publication's details: 91--101 as 91\u2013101, and so on.)
+  const more = {};
+  if (x.f && typeof x.f === 'object') Object.keys(x.f).forEach(n => { more[n] = shownValue(String(x.f[n])); });
   const e = {
-    k: IB_PRE + x.id, t, inbox: x, a: people, e: [], u: x.url ? [x.url] : [],
-    f: { title: x.title || '', year: x.year ? String(x.year) : '', [venueField]: x.venue || '', doi: x.doi || '', abstract: x.abs || '',
-      'date-added': new Date(x.added || x.at || Date.now()).toISOString().replace('T', ' ').slice(0, 19) },
+    k: IB_PRE + x.id, t, inbox: x, a: people, e: more.editor ? parseNamesLite(more.editor) : [], u: x.url ? [x.url] : [],
+    f: Object.assign({}, more, { title: x.title || '', year: x.year ? String(x.year) : '', doi: x.doi || '', abstract: x.abs || '',
+      'date-added': new Date(x.added || x.at || Date.now()).toISOString().replace('T', ' ').slice(0, 19) }, x.venue || !more[venueField] ? { [venueField]: x.venue || '' } : {}),
     files: x.pdf && x.pdf.id ? [{ id: x.pdf.id, n: x.pdf.n || 'PDF', p: 'LibLande/Inbox/Papers/' + (x.pdf.n || 'PDF') }] : null,
   };
   prep(e);
@@ -125,6 +128,14 @@ const ibStale = x => Date.now() - Math.max(x.added || 0, x.touched || 0) > IB_ST
 // A work into the Inbox, from a citation's card, Related or Cited here:
 // its details (and where it was found: the paper open in the reader, at
 // the page you're on).
+// (The citation's other parts, when they're known: volume, issue,
+// pages, month, publisher and the like, for its page's citation line.)
+const IB_FIELDS = ['volume', 'number', 'pages', 'month', 'publisher', 'address', 'booktitle', 'editor', 'edition', 'series', 'school', 'institution', 'howpublished', 'note'];
+function ibFields(fields) {
+  const out = {};
+  if (fields) IB_FIELDS.forEach(n => { if (fields[n] && typeof fields[n] === 'string') out[n] = fields[n].replace(/[{}]/g, '').slice(0, 300); });
+  return Object.keys(out).length ? out : null;
+}
 function ibAdd(c, from) {
   if (!gs || !c || !c.title) return null;
   const have = ibHas(c);
@@ -135,6 +146,8 @@ function ibAdd(c, from) {
     venue: c.venue || '', doi: ibDoi(c.doi), type: c.type || '', abs: c.absText || c.abs || '', url: c.url || '',
     from: from || ibFrom(),
   };
+  const more = ibFields(c.fields);
+  if (more) x.f = more;
   if (was && was.pdf) x.pdf = was.pdf;
   ibPut(x);
   toast('Added to your Inbox', 2600, { label: 'Show', run: () => ibShow(id) });
@@ -249,8 +262,8 @@ $('#tabs').addEventListener('pointerout', ev => {
 
 /* ---- an item's page in the library */
 function ibDetailHTML(e) {
-  const x = e.inbox, people = e.a.map(fullName);
-  const venue = [x.venue ? `<i>${esc(x.venue)}</i>` : '', esc(x.year || '')].filter(Boolean).join(', ');
+  const x = e.inbox, people = e.a.length ? e.a : e.e;
+  const venue = venueHTML(e);
   const link = x.doi ? 'https:\/\/doi.org/' + x.doi : safeUrl(x.url) ? x.url : '';
   const from = x.from ? `<div class="ib-from">${IB_NOTE_ICON}<span>Found in ` +
     (x.from.k && BYKEY.get(x.from.k) ? `<button type="button" class="linkish" data-ib="from">${esc(ibFromText(x))}</button>` : esc(ibFromText(x))) +
@@ -263,13 +276,20 @@ function ibDetailHTML(e) {
       `<button type="button" class="btn${finds ? '' : ' primary'}" data-ib="attach">${ICON.plus}<span>Attach a PDF\u2026</span></button><p class="ib-state">Or drop its PDF here.</p>`;
   side += `<button type="button" class="btn" data-ib="add">${ICON.plus}<span>Add to library</span></button>` +
     `<button type="button" class="btn quiet" data-ib="remove">${ICON.trash}<span>Remove</span></button>`;
-  return `<div class="d-inner ib-page"><div class="ib-main"><div class="d-kicker"><span class="d-type">${esc(TYPE_NAMES[e.t] || 'Publication')}</span><span class="pill ib-pill">${ICON.inbox}Inbox</span></div>` +
+  // (Its PDF's first page, as a publication's: a tap reads it.)
+  const thumb = pdf && pdf.id ? `<div class="thumbs t-side" aria-label="PDF"><button type="button" class="thumb" data-ib="read" title="Read ${esc(pdf.n)}">${thumbBox(pdf.id)}<span class="thumb-name">${esc(pdf.n)}</span></button></div>` : '';
+  const main = `<div class="ib-main"><div class="d-kicker"><span class="d-type">${esc(TYPE_NAMES[e.t] || 'Publication')}</span><span class="pill ib-pill">${ICON.inbox}Inbox</span></div>` +
     `<h1 class="d-title">${esc(x.title || '(untitled)')}</h1>` +
-    (people.length ? `<p class="ib-people">${esc(people.join(', '))}</p>` : '') +
-    (venue ? `<p class="ib-venue">${venue}</p>` : '') +
+    (people.length ? `<div class="d-authors">` + people.map((n, j) => `<span class="d-au"><button data-author="${esc(nameKey(n))}" title="Find publications by ${esc(nameKey(n))}">${esc(fullName(n))}</button>${j < people.length - 1 ? ',' : ''}</span>`).join(' ') +
+      (!e.a.length ? ' <span class="d-venue">(Eds.)</span>' : '') + `</div>` : '') +
+    (venue ? `<div class="d-venue d-cite">${venue}</div>` : '') +
     (link ? `<p class="ib-link"><a href="${esc(link)}" target="_blank" rel="noopener">${esc(x.doi ? 'doi.org/' + x.doi : link.replace(/^https?:\/\//, ''))}</a></p>` : '') +
-    from + (x.abs ? `<section class="d-sec"><h3>Abstract</h3><p class="d-abstract">${esc(x.abs)}</p></section>` : '') +
-    `</div><div class="ib-side">${side}</div></div>`;
+    from + `</div>`;
+  const abs = x.abs ? `<section class="d-sec"><h3>Abstract</h3><p class="d-abstract">${esc(x.abs)}</p></section>` : '';
+  // Laid out as a publication's details: wide, two columns (the PDF and
+  // the buttons on the right); narrow, one, the buttons before the abstract.
+  if (detailWide()) return `<div class="d-two ib-page"><div class="d-inner">${main}${abs}</div><aside class="d-side ib-side">${thumb}${side}</aside></div>`;
+  return `<div class="d-inner ib-page">${main}<div class="ib-side">${thumb}${side}</div>${abs}</div>`;
 }
 const IB_NOTE_ICON = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v11l-5 5H5z"/><path d="M14 20v-5h5"/></svg>';
 detailEl.addEventListener('click', ev => {

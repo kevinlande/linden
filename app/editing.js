@@ -2,7 +2,7 @@
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/editing.js'] = '2026-11-21.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/editing.js'] = '2026-11-21.02';
 /* ------------------------------------------------------------ add and edit */
 const TYPE_FIELDS = {
   article: ['journal', 'volume', 'number', 'pages'],
@@ -1066,7 +1066,7 @@ function saveAddInbox(type, vals) {
   const pdf = $('#addPdf').files[0] || sheet.pdf;
   if (pdf && isOffline()) { sheetMsg('Adding a PDF needs a connection. Add it without the PDF now, and attach the PDF when you\u2019re back online.', true); return; }
   const people = (vals.author ? parseNamesLite(vals.author) : vals.editor ? parseNamesLite(vals.editor) : []).map(([f, g]) => g ? f + ', ' + g : f);
-  const x = ibAdd({ title: vals.title, people, year: vals.year || '', venue: vals.journal || vals.booktitle || vals.publisher || '', doi: vals.doi || '', type, abs: vals.abstract || '', url: vals.url || '' });
+  const x = ibAdd({ title: vals.title, people, year: vals.year || '', venue: vals.journal || vals.booktitle || vals.publisher || '', doi: vals.doi || '', type, abs: vals.abstract || '', url: vals.url || '', fields: vals });
   if (!x) return;
   closeSheet();
   ibShow(x.id);

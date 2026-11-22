@@ -2,7 +2,7 @@
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/library.js'] = '2026-11-21.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/library.js'] = '2026-11-21.02';
 const $ = s => document.querySelector(s);
 // The version, as the page gives it (index.html, the loading screen): the
 // one place the app's scripts take it from.
@@ -1002,7 +1002,7 @@ function dropTarget(ev) {
   if (!gs || !ENTRIES.length || !$('#viewer').hidden) return null;
   const t = ev.target && ev.target.closest ? ev.target : null;
   if (!t) return null;
-  if (!$('#sheet').hidden) return sheet && sheet.mode === 'add' && t.closest('#sheetForm') ? { kind: 'form', el: $('#sheetForm') } : null;
+  if (!$('#sheet').hidden) return sheet && sheet.mode === 'add' && t.closest('#sheet') ? { kind: 'form', el: $('#sheetForm') } : null;
   if (!$('#setup').hidden) return null;
   const r = t.closest('#rows [data-i]');
   if (r && state.view[+r.dataset.i]) return { kind: 'entry', el: r, e: state.view[+r.dataset.i] };
@@ -2806,7 +2806,11 @@ function venueHTML(e) {
   const f = e.f;
   // (Its label's length (--lw): the piece at least as wide as its label, so
   // a short one, "Nov" under MONTH, doesn't run into the next one's.)
-  const seg = (n, text, label, cls) => (text ? `<span class="cs${cls ? ' ' + cls : ''}" data-l="${label}" style="--lw:${String(label).length}"${n ? ` data-f="${n}"` : ''}>${text}</span>` : '');
+  // (A journal's or book's name, which can run to two lines, starts at the
+  // left; one shorter than its label, "arXiv" over JOURNAL, is centred on
+  // it as the others are.)
+  const wideOk = (text, label) => String(text).replace(/<[^>]*>/g, '').replace(/&[a-z#0-9]+;/gi, 'x').length > String(label).length + 1;
+  const seg = (n, text, label, cls) => (text ? `<span class="cs${cls && (cls !== 'cs-wide' || wideOk(text, label)) ? ' ' + cls : ''}" data-l="${label}" style="--lw:${String(label).length}"${n ? ` data-f="${n}"` : ''}>${text}</span>` : '');
   const eds = e.e && e.e.length ? e.e.map(fullName).join(', ') : '';
   const edsLabel = e.e && e.e.length > 1 ? 'Editors' : 'Editor';
   const pub = join2(seg('address', f.address && esc(f.address), 'Place'), seg('publisher', f.publisher && esc(f.publisher), 'Publisher'), ': ');
@@ -2851,7 +2855,7 @@ function venueHTML(e) {
   let tail;
   if (date) { s += s ? ' ' : ''; tail = s.length; s += '(' + date + ')'; }
   else tail = Math.max(0, s.lastIndexOf('<span class="cs'));
-  const add = gs && (e.f.doi || citeFields(e.t).some(n => !e.f[n]))
+  const add = gs && !e.inbox && (e.f.doi || citeFields(e.t).some(n => !e.f[n]))
     ? `<button type="button" class="cs-add" data-cite-add aria-label="Add to the citation" title="Add to the citation"></button>` : '';
   return s || add ? s.slice(0, tail) + `<span class="cs-end">${s.slice(tail)}${s ? '.' : ''}${add}</span>` : '';
 }
@@ -3091,6 +3095,8 @@ function renderDetail() {
     watchSeen(null);
     if (phoneMQ.matches) $('#backLabel').textContent = app.dataset.view === 'detail' ? groupName(state.group) : 'Groups';
     detailEl.innerHTML = ib.trash ? trDetailHTML(ib) : ibDetailHTML(ib);
+    detailEl.dataset.wide = !ib.trash && detailWide() ? '1' : '';
+    loadThumbs();
     return;
   }
   const e = state.selKey && BYKEY.get(state.selKey);
