@@ -17,7 +17,7 @@
   window.LIBLANDE_PAGES = true;
   // (Which version each part of the app is from: index.html checks they
   // match. build.py fills it in.)
-  (window.LIBLANDE_PARTS = window.LIBLANDE_PARTS || {}).server = '2026-11-21.02';
+  (window.LIBLANDE_PARTS = window.LIBLANDE_PARTS || {}).server = '2026-11-22.01';
   const CLIENT_ID = '789682218462-98mjugngb46ttd01ucp9dcj71ufspjgn.apps.googleusercontent.com';
   // Google Drive, in one of two ways (docs/drive-file-plan.md):
   // full: all of Drive (your .bib, papers and LibLande folder wherever
@@ -94,7 +94,7 @@
   // "not connected" page. Back online, a tap asks again.)
   const OFFLINE_BAR = 'You\u2019re offline. LibLande will reconnect to Google Drive when you\u2019re back online.';
   function ask() {
-    if (!navigator.onLine) { bar(OFFLINE_BAR); return; }
+    if (!online()) { bar(OFFLINE_BAR); return; }
     // (Never signed in on this device: full or limited access first.)
     if (!access) { chooser(); return; }
     makeClient();
@@ -146,7 +146,7 @@
   // page of a paper, where Google's window would interrupt a stroke; the
   // bar, or a tap anywhere else, does it then.)
   function onTap(ev) {
-    if (asking || !navigator.onLine || !access) return;
+    if (asking || !online() || !access) return;
     const onPage = ev.target && ev.target.closest && ev.target.closest('#vPages, #vPeekPages');
     if (waiters.length || (!onPage && token && age() > RENEW_AFTER)) ask();
   }
@@ -159,6 +159,14 @@
     const old = token || store.get('token', null);
     if (waiters.length && old) { const w = waiters; waiters = []; w.forEach(f => f(old.value)); }
     if (barEl && !barEl.hidden) bar(waiters.length ? OFFLINE_BAR : null);
+  });
+  // (Google found not to answer, though the browser says online, as an
+  // iPad in airplane mode can at first: the same as going offline.)
+  window.addEventListener('liblande-reach', ev => {
+    if (!ev.detail || ev.detail.ok) return;
+    const old = token || store.get('token', null);
+    if (waiters.length && old) { const w = waiters; waiters = []; w.forEach(f => f(old.value)); }
+    if (barEl && !barEl.hidden) bar(OFFLINE_BAR);
   });
   window.addEventListener('online', () => {
     if (waiters.length && !valid()) bar(email ? TAP_RECONNECT() : 'Sign in with Google to open your library');

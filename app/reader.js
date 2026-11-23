@@ -2,7 +2,7 @@
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/reader.js'] = '2026-11-21.02';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/reader.js'] = '2026-11-22.01';
 /* ------------------------------------------------------------ PDF reader */
 // The reader downloads a paper straight from Google Drive and shows it with
 // PDF.js 5 (the viewer inside Firefox), which draws highlights, pen marks and
@@ -356,7 +356,9 @@ const NET_MS = { get first() { return window.LIBLANDE_NET_MS || 25000; }, get st
 async function getPdfBytes(file, onProgress) {
   if (recentPdfs.has(file.id)) return recentPdfs.get(file.id);
   const url = 'https:\/\/www.googleapis.com/drive/v3/files/' + encodeURIComponent(file.id) + '?alt=media';
-  try { return await getPdfBytesFrom(url, file, onProgress); } catch (err) {
+  // (Known to be offline: the copy kept here at once, Drive not tried.)
+  const offline = isOffline();
+  try { if (offline && window.caches && await caches.match(url).catch(() => null)) throw Object.assign(new Error('offline'), { noAnswer: true }); return await getPdfBytesFrom(url, file, onProgress); } catch (err) {
     const kept = window.caches ? await caches.match(url).catch(() => null) : null;
     if (kept && (err.noAnswer || err instanceof TypeError || err.status === 401)) {
       // (Perhaps older than Drive's: its own checksum goes with it, so a
@@ -784,12 +786,16 @@ async function openReader(entry, file, pos) {
   $('#vClose').focus();
   vStatus('Downloading the paper\u2026');
   try {
-    let [{ lib, viewerLib }, md5] = await Promise.all([loadPdfViewer(), gs ? pdfMd5(file).catch(() => null) : null]);
-    if (md5 && recentMd5.get(file.id) !== md5) recentPdfs.delete(file.id);
+    // (Drive's checksum asked for alongside, not first: offline, or Drive
+    // slow, the copy kept on this device opens without waiting for it.)
+    const md5P = gs && !isOffline() ? pdfMd5(file).catch(() => null) : Promise.resolve(null);
+    const { lib, viewerLib } = await loadPdfViewer();
+    let md5 = null;
+    if (recentPdfs.has(file.id)) { md5 = await md5P; if (md5 && recentMd5.get(file.id) !== md5) recentPdfs.delete(file.id); }
     const bytes = await getPdfBytes(file, f => { if (my === V.token) vStatus('Downloading the paper\u2026 ' + Math.round(f * 100) + '%'); });
     // (The copy kept on this device, Drive not answering: its checksum, not Drive's.)
     if (bytes.keptMd5) md5 = bytes.keptMd5;
-    else if (md5) recentMd5.set(file.id, md5);
+    else { md5 = md5 || await md5P; if (md5) recentMd5.set(file.id, md5); }
     if (my !== V.token) return;
     // Changes kept on this device and never uploaded: opened with them,
     // if the PDF on Drive is still the one they were made to (or you said
