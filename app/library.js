@@ -2,7 +2,7 @@
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/library.js'] = '2026-11-22.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/library.js'] = '2026-11-23.01';
 const $ = s => document.querySelector(s);
 // The version, as the page gives it (index.html, the loading screen): the
 // one place the app's scripts take it from.
@@ -56,6 +56,8 @@ const ICON = {
   camera: '<svg class="i" viewBox="0 0 24 24"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2.3l1.4-2h5.6l1.4 2h2.3A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.8" r="3.4"/></svg>',
   qr: '<svg class="i" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z"/><path d="M14 14h2.5v2.5H14zM17.5 17.5H20V20h-2.5zM14 20h2M20 14v2"/></svg>',
   eraser: '<svg class="i" viewBox="0 0 24 24"><path d="M9 20h11"/><path d="M4.7 14.3l8.6-8.6a2 2 0 0 1 2.8 0l3.2 3.2a2 2 0 0 1 0 2.8L12 19H8l-3.3-3.3a1 1 0 0 1 0-1.4z"/><path d="M9.3 9.7l5 5"/></svg>',
+  // (Some pages of a PDF: a page with another under it.)
+  pages: '<svg class="i" viewBox="0 0 24 24"><rect x="4" y="3" width="11" height="14" rx="1.5"/><path d="M9 21h9.5a1.5 1.5 0 0 0 1.5-1.5V8"/><path d="M7.5 8h4M7.5 11h4"/></svg>',
   download: '<svg class="i" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>',
   drive: '<svg class="i" viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
   clip: '<svg class="i" viewBox="0 0 24 24"><path d="M20 11.5l-8 8a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7L9.7 17.2a1.7 1.7 0 0 1-2.4-2.4L15 7"/></svg>',
@@ -3537,6 +3539,7 @@ detailEl.addEventListener('click', ev => {
   if (e && sh) {
     sh.closest('details').open = false;
     const how = sh.dataset.how;
+    if (how === 'p0') { openSharePages(e, e.files[+sh.dataset.share]); return; }
     prepareShare(e.files[+sh.dataset.share], how[1] === '1', how[0] === 'd' ? 'download' : mailOf(e), sh.closest('details').querySelector('summary'));
     return;
   }
@@ -3582,13 +3585,16 @@ detailEl.addEventListener('click', ev => {
 // a row whose name does it as is, and whose end, "Clean", without the
 // annotations. attr: the item's data, by its key (s0, s1, d0, d1); keys:
 // with the shortcuts shown (the reader's; filled in by shareKeyHints).
-const SHARE_KEYS = { share: 's0', shareClean: 's1', download: 'd0', downloadClean: 'd1' };
+// Then Pages... (p0), some of its pages (see openSharePages).
+const SHARE_KEYS = { share: 's0', shareClean: 's1', download: 'd0', downloadClean: 'd1', sharePages: 'p0' };
 function shareItems(attr, keys) {
   const id = k => Object.keys(SHARE_KEYS).find(x => SHARE_KEYS[x] === k);
   const row = (k, icon, label, clean) => `<div class="mi-row"><button type="button" role="menuitem" class="mi" ${attr(k + '0')}>${icon}<span>${label}</span>` +
     (keys ? `<kbd data-key-hint="${id(k + '0')}"></kbd>` : '') + `</button>` +
     `<button type="button" role="menuitem" class="mi-side" ${attr(k + '1')} title="${clean}" aria-label="${clean}"${keys ? ` data-key-title="${id(k + '1')}"` : ''}>${ICON.eraser}<span>Clean</span></button></div>`;
-  return row('s', ICON.share, 'Share\u2026', 'Share a clean copy (no annotations)') + row('d', ICON.download, 'Download', 'Download a clean copy (no annotations)');
+  return row('s', ICON.share, 'Share\u2026', 'Share a clean copy (no annotations)') + row('d', ICON.download, 'Download', 'Download a clean copy (no annotations)') +
+    `<div class="mi-row"><button type="button" role="menuitem" class="mi" ${attr('p0')} title="Share or download some of its pages">${ICON.pages}<span>Pages\u2026</span>` +
+    (keys ? `<kbd data-key-hint="sharePages"></kbd>` : '') + `</button></div>`;
 }
 
 // A reference list as RTF, which Word, Pages, TextEdit and Google Docs open

@@ -2,7 +2,7 @@
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/tour.js'] = '2026-11-22.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/tour.js'] = '2026-11-23.01';
 /* -------------------------------------------------------------- features */
 // What LibLande does, by area: each feature, what it's for, where to find
 // it, its icon (see featIcon), and other words it's found by (as "tag"
@@ -65,6 +65,7 @@ const FEATURES = [
     ['Related works', 'Publications in your library most like the paper, or like the page you\u2019re on, and those it cites or that cite it, each saying why; and similar work not in your library, from OpenAlex, to add with +. With Related open, select a passage or click a highlight: a card of the works it cites, and those like it, in your library and not.', 'The reader\u2019s sidebar \u203a Related', 'path:M4.5 15a4 4 0 1 0 8 0a4 4 0 1 0-8 0M14.4 6a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0-5.2 0M17.1 15.5a1.9 1.9 0 1 0 3.8 0a1.9 1.9 0 1 0-3.8 0M2.8 5.5a1.7 1.7 0 1 0 3.4 0a1.7 1.7 0 1 0-3.4 0M11 11.9l4.3-4.1M12.5 15.2h4.6M7.3 11.2L5.2 7.1', 'similar recommendations related openalex passage highlight'],
     ['Where you left off', 'Each paper opens where you were. If you got further on another device, a button offers to go there; Back to page returns.', 'The button at the foot of the reader', 'ICON:history', 'position resume sync'],
     ['Share a copy', 'The PDF as it is or clean (without your marks), to Mail or any app with its citation as the message, or downloaded; or opened in Google Drive.', 'The share button in the reader (\u2325M, or \u2325S to download; add \u21e7 for clean); Share in the details', '#vShare summary', 'email mail send download clean'],
+    ['Share pages', 'Some pages of a PDF as a PDF of their own: a chapter, a section or the page you\u2019re on, as they are or clean, shared with the citation and its pages, or downloaded. Printed page numbers are used when LibLande is sure of them.', 'Pages\u2026 in the Share menu (\u2325\u21e7P in the reader); in the details too', '#vShare summary', 'pages range excerpt chapter extract part section'],
   ] },
   { area: 'Marking up', items: [
     ['Highlight', 'Drag over the words; lines join into one block within the column. Drag from a highlight to lengthen it. Choose its colour. Hold the highlighter for freehand. Or select a passage and choose a colour beside it.', 'The highlighter (H) in the markup toolbar; the colours beside a passage you select', '#vpMarkup', 'annotate mark color'],
@@ -209,7 +210,7 @@ const TOUR_STEPS = [
   { sel: '#vSide', title: 'Cited here and related', text: 'Every work the paper cites, yours marked, the others to add with +; and works like it, in your library and not. Select a passage, or click a highlight, for works related to just that. Or select a reference in the paper and choose Add to library. Rest the pointer or the Pencil on a citation for its card, or tap it to keep the card open.', before: () => readerSide('related') },
   { sel: '#vTools, .v-tools', title: 'Reading view', text: 'Search (\u2318F): the paper\u2019s text, highlights and your notes, in a panel on the right, with \u2039 \u203a to step through them. Light or dark pages, split screen, and the zoom: click or tap the percentage to fit the page or its width.' },
   { sel: '#vSide', title: 'Outline, pages and bookmarks', text: 'Jump by chapter; edit the outline, or make one from the Contents. Pages turns or splits pages; Bookmarks lists pages you\u2019ve marked.', before: () => readerSide('outline') },
-  { sel: '#vShare', title: 'Share', text: 'Send the PDF to Mail or any app with its citation, or download it. Clean leaves out your marks.' },
+  { sel: '#vShare', title: 'Share', text: 'Send the PDF to Mail or any app with its citation, or download it. Clean leaves out your marks. Pages\u2026 sends just some pages: a chapter, say.' },
   { title: 'That\u2019s the tour', text: 'Start by adding a paper with + (or drop a PDF on it), and open one with Read. To cite in Word (and add works found online as you write), install the add-in from Settings \u203a Extensions. Everything else is in Features, at the foot of the sidebar.' },
 ];
 function startTour() {

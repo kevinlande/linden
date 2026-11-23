@@ -2,7 +2,7 @@
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/reader.js'] = '2026-11-22.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/reader.js'] = '2026-11-23.01';
 /* ------------------------------------------------------------ PDF reader */
 // The reader downloads a paper straight from Google Drive and shows it with
 // PDF.js 5 (the viewer inside Firefox), which draws highlights, pen marks and
@@ -7185,6 +7185,7 @@ $('#vShare').addEventListener('click', async ev => {
   if (!b) return;
   $('#vShare').open = false;
   if (!V.file) return;
+  if (b.dataset.vshare === 'p0') { openSharePages(V.entry, V.file, true); return; }
   const mail = b.dataset.vshare[0] === 'd' ? 'download' : V.entry ? mailOf(V.entry) : null;
   if (b.dataset.vshare[1] === '1') { prepareShare(V.file, true, mail, $('#vShare summary')); return; }
   if (!V.bytes) { toast('The paper is still downloading.', 2000); return; }
@@ -7412,3 +7413,273 @@ async function prepareShare(file, clean, mail, anchor) {
   }
 }
 $('#readyClose').addEventListener('click', () => { $('#readyBar').hidden = true; });
+
+// Share pages: some of a PDF's pages, shared or downloaded as a PDF of
+// their own (made here, with pdf-lib; the file in Drive is untouched).
+// The range is in the PDF's own page numbers; the printed ones are shown,
+// and go in the file's name and the message, only when they're known for
+// sure (the PDF's page labels or, in the reader, printedPage's sure ones).
+// Its picks: the page you're on (in the reader), and a book's chapters
+// from the library (where their printed pages can be found in the PDF),
+// or else the PDF's own contents. From the details, the PDF is fetched
+// and opened for the sheet (SP.own), closed with it.
+const SP = { tok: 0, own: null };
+// (inReader: from the reader's menu, the open paper: its page, and its
+// marks not yet saved.)
+async function openSharePages(entry, file, inReader) {
+  if (!file || !gs) return;
+  spClose();
+  const here = !!(inReader && V.doc && V.file && V.file.id === file.id);
+  const my = SP.tok;
+  Object.assign(SP, { entry, file, here, doc: here ? V.doc : null, bytes: null, N: here ? V.doc.numPages : 0, labels: null,
+    picks: [], kind: '', pp: new Map(), clean: !!store.get('spClean', false), swapped: false, show: 0 });
+  sheet = { mode: 'pages' };
+  const dl = `<button type="button" class="btn sheet-go sp-dl" data-sp-dl aria-label="Download" title="Download these pages">${ICON.download}<span>Download</span></button>`;
+  const head = sheetHead('Share pages', `${ICON.share}<span>Share\u2026</span>`).replace('<button type="submit"', dl + '<button type="submit"');
+  showSheet(head +
+    `<fieldset class="fld grp-fieldset"><legend>Pages</legend>` +
+    `<div class="sp-range"><span class="sp-unit">PDF pages</span><input id="spFrom" type="text" inputmode="numeric" autocomplete="off" aria-label="First page">` +
+    `<span class="sp-of">to</span><input id="spTo" type="text" inputmode="numeric" autocomplete="off" aria-label="Last page"><span class="sp-of" id="spOf"></span></div>` +
+    `<p class="sp-printed" id="spPrinted" hidden></p><div class="sp-picks" id="spPicks"></div></fieldset>` +
+    `<fieldset class="fld grp-fieldset"><legend>Marks</legend><div class="seg sp-seg" role="radiogroup" aria-label="Marks">` +
+    `<button type="button" role="radio" data-sp-clean="0">As they are</button><button type="button" role="radio" data-sp-clean="1">Clean</button></div></fieldset>` +
+    `<div class="sp-sum" id="spSum" aria-live="polite"></div><div class="dup-note" id="spNote" hidden></div>`, 'Share\u2026');
+  $('#sheet').classList.add('head-mode', 'compact');
+  spSegs();
+  spEnable(false);
+  try {
+    if (!here) {
+      sheetMsg('Getting the PDF\u2026');
+      SP.bytes = await getPdfBytes(file);
+      if (my !== SP.tok) return;
+      SP.own = SP.doc = await openPdf(await loadPdfJs(), { data: SP.bytes.slice(0) }).promise;
+      if (my !== SP.tok) { spClose(); return; }
+      SP.N = SP.doc.numPages;
+      sheetMsg('');
+    }
+    const L = await SP.doc.getPageLabels().catch(() => null);
+    SP.labels = L && L.length === SP.N && L.some((l, i) => l !== String(i + 1)) ? L : null;
+    await spFindPicks();
+    if (my !== SP.tok) return;
+  } catch (err) {
+    if (my !== SP.tok) return;
+    sheetMsg('');
+    spNote(isOffline() ? 'You\u2019re offline, and this PDF isn\u2019t kept on this device. Try again when you\u2019re connected.' : 'Couldn\u2019t get the PDF: ' + errText(err), true);
+    return;
+  }
+  const cur = here ? V.viewer.currentPageNumber : 0;
+  $('#spOf').textContent = 'of ' + SP.N;
+  $('#spFrom').value = here ? cur : 1;
+  $('#spTo').value = here ? cur : SP.N;
+  spEnable(true);
+  spPicksHTML();
+  spShow();
+  if (!coarseMQ.matches) { $('#spFrom').focus(); $('#spFrom').select(); }
+}
+function spClose() {
+  SP.tok++;
+  if (SP.own) { const d = SP.own; SP.own = null; closePdf(d).catch(() => {}); }
+  SP.doc = null; SP.bytes = null;
+}
+function spEnable(on) {
+  ['#spFrom', '#spTo'].forEach(s => { const el = $(s); if (el) el.disabled = !on; });
+  $('#sheetBody').querySelectorAll('.sheet-go, .sp-seg button').forEach(b => { b.disabled = !on; });
+  $('#sheetSave').disabled = !on;
+}
+function spNote(msg, warn) {
+  const n = $('#spNote');
+  if (!n) return;
+  n.hidden = !msg;
+  n.classList.toggle('warn', !!warn);
+  n.innerHTML = msg ? (warn ? ICON.alert : '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.3"/></svg>') + `<span>${esc(msg)}</span>` : '';
+}
+function spSegs() {
+  $('#sheetBody').querySelectorAll('[data-sp-clean]').forEach(b => b.setAttribute('aria-checked', String((b.dataset.spClean === '1') === SP.clean)));
+}
+// A page's printed number, {page, sure}, or null where it can't be told.
+async function spPrinted(n) {
+  if (SP.pp.has(n)) return SP.pp.get(n);
+  let r = null;
+  if (SP.labels) r = { page: SP.labels[n - 1], sure: /^(\d+|[ivxlcdm]+)$/i.test(SP.labels[n - 1] || '') };
+  else if (SP.here && V.doc === SP.doc) r = await printedPage(n).catch(() => null);
+  SP.pp.set(n, r);
+  return r;
+}
+async function spPrintedRange(r) {
+  const a = await spPrinted(r.from), b = r.to === r.from ? a : await spPrinted(r.to);
+  if (!a || !b || !a.sure || !b.sure) return null;
+  if (/^\d+$/.test(a.page) && /^\d+$/.test(b.page) && +b.page - +a.page !== r.to - r.from) return null;
+  return { a: a.page, b: b.page };
+}
+const spPP = pr => pr.a === pr.b ? 'p. ' + pr.a : 'pp. ' + pr.a + '\u2013' + pr.b;
+// The book's chapters (the entry's, or the book it's a chapter of), each
+// found in the PDF by its printed pages; else the PDF's contents.
+async function spFindPicks() {
+  const e = SP.entry, N = SP.N, doc = SP.doc;
+  const bookKey = e && (isBook(e) ? e.k : CHAPTER_OF.get(e.k));
+  const chs = (bookKey && CHAPTERS.get(bookKey)) || [];
+  let toPdf = null;
+  if (chs.length && SP.labels) {
+    const at = new Map();
+    SP.labels.forEach((l, i) => { if (!at.has(l)) at.set(l, i + 1); });
+    toPdf = p => at.get(String(p)) || 0;
+  } else if (chs.length && SP.here) {
+    const cur = V.viewer.currentPageNumber, r = await spPrinted(cur);
+    if (r && r.sure && /^\d+$/.test(r.page)) { const off = +r.page - cur; toPdf = p => p - off; }
+  }
+  const out = [];
+  if (toPdf) for (const c of chs) {
+    const m = /^(\d+)\s*[-\u2013\u2014]+\s*(\d+)$/.exec(String(c.f.pages || '').replace(/[{}]/g, '').trim());
+    if (!m) continue;
+    const a = toPdf(+m[1]), b = toPdf(+m[2]);
+    if (a >= 1 && b >= a && b <= N) out.push({ title: (c.f.chapter ? shownValue(String(c.f.chapter)) + '. ' : '') + shownValue(String(c.f.title || c.k)), from: a, to: b, pages: 'pp. ' + m[1] + '\u2013' + m[2] });
+  }
+  if (out.length && (bookKey === e.k || out.length > 1)) { SP.picks = out; SP.kind = 'Chapter'; return; }
+  // The PDF's contents: its top level (or, under a single heading, the level below it).
+  let items = (await doc.getOutline().catch(() => null)) || [];
+  if (items.length === 1 && items[0].items && items[0].items.length > 1) items = items[0].items;
+  const starts = [];
+  for (const it of items.slice(0, 300)) {
+    let p = 0;
+    try {
+      const d = typeof it.dest === 'string' ? await doc.getDestination(it.dest) : it.dest;
+      if (Array.isArray(d) && d[0] != null) p = typeof d[0] === 'object' ? (await doc.getPageIndex(d[0])) + 1 : Number.isInteger(d[0]) ? d[0] + 1 : 0;
+    } catch (err) { p = 0; }
+    if (p >= 1 && p <= N) starts.push({ title: String(it.title || '').trim() || 'Untitled', from: p });
+  }
+  starts.sort((a, b) => a.from - b.from);
+  for (let i = 0; i < starts.length; i++) {
+    const s = starts[i];
+    s.to = i + 1 < starts.length ? Math.max(s.from, starts[i + 1].from - 1) : N;
+    const pr = await spPrintedRange(s);
+    s.pages = pr ? spPP(pr) : s.from === s.to ? String(s.from) : s.from + '\u2013' + s.to;
+  }
+  SP.picks = starts.length > 1 ? starts : [];
+  SP.kind = 'Section';
+}
+async function spPicksHTML() {
+  const el = $('#spPicks');
+  if (!el) return;
+  let h = '';
+  if (SP.here) {
+    const cur = V.viewer.currentPageNumber, pr = await spPrinted(cur);
+    h += `<button type="button" class="btn sp-pick" data-sp-here>This page <small>${esc(pr && pr.sure ? 'p. ' + pr.page : String(cur))}</small></button>`;
+  }
+  if (SP.picks.length) h += `<details class="menu sp-ch"><summary class="btn sp-pick" aria-label="${SP.kind}"><span class="sp-ch-t">${SP.kind}</span><small class="sp-ch-p"></small>${ICON.chev}</summary>` +
+    `<div class="menu-list" role="menu">` + SP.picks.map((p, i) => `<button type="button" role="menuitem" class="mi" data-sp-pick="${i}"><span class="sp-ch-name">${esc(p.title)}</span><small>${esc(p.pages)}</small></button>`).join('') + `</div></details>`;
+  el.innerHTML = h;
+  el.hidden = !h;
+}
+// The range typed: "61" and "83", or "61-83" in the first box; kept to the
+// PDF's pages, a backwards one turned round, an empty "to" one page.
+function spRead() {
+  const N = SP.N, num = v => /^\s*\d+\s*$/.test(v) ? +v : null;
+  let a = $('#spFrom').value, b = $('#spTo').value;
+  const m = /^\s*(\d+)\s*[-\u2013\u2014:]+\s*(\d+)\s*$/.exec(a);
+  if (m) { a = m[1]; b = m[2]; }
+  const x0 = num(a), y0 = String(b).trim() === '' ? x0 : num(b);
+  if (x0 == null || y0 == null) return { bad: true };
+  let x = Math.max(1, Math.min(N, x0)), y = Math.max(1, Math.min(N, y0)), swapped = false;
+  if (y < x) { [x, y] = [y, x]; swapped = true; }
+  return { from: x, to: y, swapped };
+}
+function spFix() {
+  const r = spRead();
+  if (r.bad) return r;
+  $('#spFrom').value = r.from; $('#spTo').value = r.to;
+  SP.swapped = r.swapped;
+  return r;
+}
+function spName(r, pr) {
+  const base = SP.file.n.replace(/\s*\.pdf$/i, '');
+  const part = pr ? (pr.a === pr.b ? 'p. ' + pr.a : 'pp. ' + pr.a + '-' + pr.b) : r.from === r.to ? 'PDF page ' + r.from : 'PDF pages ' + r.from + '-' + r.to;
+  return base + ', ' + part + (SP.clean ? ' (clean)' : '') + '.pdf';
+}
+// What will be made: the printed pages, the chosen pick, the count and the
+// file's name (and, with room, its first and last pages).
+async function spShow() {
+  if (!sheet || sheet.mode !== 'pages' || !SP.N) return;
+  const my = ++SP.show, r = spRead();
+  if (r.bad) return;
+  sheetMsg('');
+  const pr = await spPrintedRange(r);
+  if (my !== SP.show || !$('#spSum')) return;
+  const p = $('#spPrinted');
+  p.hidden = !pr && !SP.swapped;
+  p.innerHTML = (pr ? `Printed ${pr.a === pr.b ? 'page' : 'pages'} <b>${esc(pr.a === pr.b ? pr.a : pr.a + '\u2013' + pr.b)}</b>` : '') +
+    (SP.swapped ? `<span class="sp-swap">${pr ? ' \u00b7 ' : ''}Swapped: the last page came first</span>` : '');
+  const i = SP.picks.findIndex(x => x.from === r.from && x.to === r.to), ch = $('#spPicks .sp-ch');
+  if (ch) {
+    ch.querySelector('.sp-ch-t').textContent = i >= 0 ? SP.picks[i].title : SP.kind;
+    ch.querySelector('.sp-ch-p').textContent = i >= 0 ? SP.picks[i].pages : '';
+    ch.querySelectorAll('[data-sp-pick]').forEach(b => b.classList.toggle('cur', +b.dataset.spPick === i));
+  }
+  const n = r.to - r.from + 1, thumbs = innerWidth >= 700;
+  $('#spSum').innerHTML = (thumbs ? `<span class="sp-thumbs" aria-hidden="true"><canvas data-sp-thumb="${r.from}"></canvas>` + (n > 1 ? `${n > 2 ? '<span class="sp-dots">\u00b7\u00b7\u00b7</span>' : ''}<canvas data-sp-thumb="${r.to}"></canvas>` : '') + `</span>` : '') +
+    `<span class="sp-txt"><b>${n.toLocaleString()} ${n === 1 ? 'page' : 'pages'}</b>${SP.clean ? ', clean' : ''}<br><span class="sp-fn">${esc(spName(r, pr))}</span></span>`;
+  spNote(r.from === 1 && r.to === SP.N && SP.N > 1 ? 'That\u2019s every page. Pick a range, or use Share in the Share menu for the whole PDF.' : '');
+  if (thumbs) $('#spSum').querySelectorAll('canvas').forEach(c => spThumb(c, +c.dataset.spThumb, my));
+}
+async function spThumb(c, n, my) {
+  try {
+    const page = await SP.doc.getPage(n);
+    if (my !== SP.show) return;
+    const v0 = page.getViewport({ scale: 1 }), dpr = Math.min(2, devicePixelRatio || 1);
+    const vp = page.getViewport({ scale: 52 * dpr / v0.height });
+    c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+    c.style.width = Math.round(vp.width / dpr) + 'px'; c.style.height = '52px';
+    await page.render({ canvasContext: c.getContext('2d'), viewport: vp, annotationMode: 0 }).promise;
+  } catch (err) { /* (No picture: just the count.) */ }
+}
+function spBusy(btn, on) {
+  spEnable(!on);
+  $('#sheetCancel').disabled = on;
+  const x = $('#sheetBody .sheet-x');
+  if (x) x.disabled = on;
+  if (btn) btn.classList.toggle('busy', on);
+}
+async function spGo(download) {
+  if (!sheet || sheet.mode !== 'pages' || !SP.N) return;
+  const r = spFix();
+  if (r.bad) { sheetMsg('Type page numbers, like 12 to 20.', true); return; }
+  spShow();
+  const t0 = performance.now(), file = SP.file, entry = SP.entry, clean = SP.clean;
+  const btn = download ? $('#sheetBody [data-sp-dl]') : $('#sheetBody .sheet-go[type="submit"]');
+  spBusy(btn, true);
+  try {
+    let src;
+    if (SP.here && V.file && V.file.id === file.id && V.bytes) {
+      if (!clean && V.drawing) { await commitDrawing(); V.drawing = false; if (V.tool !== 'read') setTool(V.tool); }
+      src = !clean && (V.dirty || V.bmDirty) && V.doc ? await realLines(await V.doc.saveDocument()) : V.bytes;
+    } else src = SP.bytes || await getPdfBytes(file);
+    let bytes = await pagesPdf(src, r.from, r.to);
+    if (clean) bytes = (await cleanPdf(bytes)).bytes;
+    const pr = await spPrintedRange(r), name = spName(r, pr);
+    spBusy(btn, false);
+    closeSheet();
+    if (download) { openIn(bytes, name, null, null, 'download'); return; }
+    const mail = entry ? mailOf(entry) : null;
+    if (mail && pr) { mail.subject += ', ' + spPP(pr); mail.text += '\n\n' + (pr.a === pr.b ? 'Page ' + pr.a : 'Pages ' + pr.a + '\u2013' + pr.b) + '.'; }
+    const ready = () => showReady('Ready', name, 'Share', () => openIn(bytes, name, null, null, mail), null);
+    // (As prepareShare: soon enough after the click, the share sheet at once.)
+    if (performance.now() - t0 < (window.LIBLANDE_SHARE_WAIT == null ? 800 : window.LIBLANDE_SHARE_WAIT)) openIn(bytes, name, null, null, mail, ready); else ready();
+  } catch (err) {
+    spBusy(btn, false);
+    sheetMsg('Couldn\u2019t make the PDF: ' + errText(err), true);
+  }
+}
+$('#sheetBody').addEventListener('click', ev => {
+  if (!sheet || sheet.mode !== 'pages') return;
+  if (ev.target.closest('[data-sp-dl]')) { ev.preventDefault(); spGo(true); return; }
+  const c = ev.target.closest('[data-sp-clean]');
+  if (c) { SP.clean = c.dataset.spClean === '1'; store.set('spClean', SP.clean); spSegs(); spShow(); return; }
+  const set = (a, b) => { $('#spFrom').value = a; $('#spTo').value = b; SP.swapped = false; spShow(); };
+  if (ev.target.closest('[data-sp-here]')) { const n = V.viewer.currentPageNumber; set(n, n); return; }
+  const p = ev.target.closest('[data-sp-pick]');
+  if (p) { const x = SP.picks[+p.dataset.spPick]; p.closest('details').open = false; if (x) set(x.from, x.to); }
+});
+$('#sheetBody').addEventListener('input', ev => { if (sheet && sheet.mode === 'pages' && /^sp(From|To)$/.test(ev.target.id)) { SP.swapped = false; spShow(); } });
+$('#sheetBody').addEventListener('change', ev => {
+  if (!sheet || sheet.mode !== 'pages' || !/^sp(From|To)$/.test(ev.target.id)) return;
+  if (spFix().bad) sheetMsg('Type page numbers, like 12 to 20.', true); else spShow();
+});

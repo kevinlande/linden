@@ -2,7 +2,7 @@
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/editing.js'] = '2026-11-22.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/editing.js'] = '2026-11-23.01';
 /* ------------------------------------------------------------ add and edit */
 const TYPE_FIELDS = {
   article: ['journal', 'volume', 'number', 'pages'],
@@ -284,6 +284,8 @@ function closeSheet() {
   const back = sheet && sheet.msBack, np = sheet && sheet.npBack, info = sheet && sheet.infoBack, rel = sheet && sheet.relBack;
   // (Add's "Scanning text..." and the like go with it.)
   if (sheet && sheet.mode === 'add' && $('#toast').classList.contains('busy')) $('#toast').classList.remove('show');
+  // (Share pages: the PDF it opened, closed.)
+  if (sheet && sheet.mode === 'pages') spClose();
   $('#sheet').hidden = true;
   undockSheet();
   sheet = null;
@@ -1096,7 +1098,7 @@ function reopenAdd(snap, why) {
 $('#sheetForm').addEventListener('submit', ev => {
   ev.preventDefault();
   if (!sheet || $('#sheetSave').disabled) return;
-  if (sheet.mode === 'edit') saveEdit(); else if (sheet.mode === 'forth') saveForth(); else if (sheet.mode === 'join') saveJoin(); else if (sheet.mode === 'export') runExport(); else if (sheet.mode === 'export-save') saveExport(); else if (sheet.mode === 'help' || sheet.mode === 'msreport' || sheet.mode === 'newpapers' || sheet.mode === 'qr' || sheet.mode === 'waiting') closeSheet(); else if (sheet.mode === 'npfollow') saveFollow(); else if (sheet.mode === 'mscheck') runMsCheck(); else if (sheet.mode === 'msfix') runMsFix(); else if (sheet.mode === 'smart') saveSmart(); else if (sheet.mode === 'bulk') saveBulk(); else if (sheet.mode === 'kwtidy') saveKwTidy(); else if (sheet.mode === 'linkch') saveLinkChapters(); else if (sheet.mode === 'trash' || sheet.mode === 'trashdel' || sheet.mode === 'trashkey') trSheetSave(); else if (sheet.mode === 'attach') { const a = sheet, mode = ($('#sheetBody').querySelector('[name=attachMode]:checked') || {}).value; closeSheet(); runAttach(a.entry, a.file, mode === 'replace'); } else saveAdd();
+  if (sheet.mode === 'pages') spGo(false); else if (sheet.mode === 'edit') saveEdit(); else if (sheet.mode === 'forth') saveForth(); else if (sheet.mode === 'join') saveJoin(); else if (sheet.mode === 'export') runExport(); else if (sheet.mode === 'export-save') saveExport(); else if (sheet.mode === 'help' || sheet.mode === 'msreport' || sheet.mode === 'newpapers' || sheet.mode === 'qr' || sheet.mode === 'waiting') closeSheet(); else if (sheet.mode === 'npfollow') saveFollow(); else if (sheet.mode === 'mscheck') runMsCheck(); else if (sheet.mode === 'msfix') runMsFix(); else if (sheet.mode === 'smart') saveSmart(); else if (sheet.mode === 'bulk') saveBulk(); else if (sheet.mode === 'kwtidy') saveKwTidy(); else if (sheet.mode === 'linkch') saveLinkChapters(); else if (sheet.mode === 'trash' || sheet.mode === 'trashdel' || sheet.mode === 'trashkey') trSheetSave(); else if (sheet.mode === 'attach') { const a = sheet, mode = ($('#sheetBody').querySelector('[name=attachMode]:checked') || {}).value; closeSheet(); runAttach(a.entry, a.file, mode === 'replace'); } else saveAdd();
 });
 $('#sheetCancel').addEventListener('click', closeSheet);
 $('#sheetBody').addEventListener('click', ev => { const x = ev.target.closest('[data-sheet-cancel]'); if (x && !x.disabled) closeSheet(); });
@@ -2716,6 +2718,7 @@ const KEY_ACTS = [
   { id: 'shareClean', scope: 'pdf', def: 'Alt+Shift+KeyM', label: 'Share a clean copy (no annotations)' },
   { id: 'download', scope: 'pdf', def: 'Alt+KeyS', label: 'Download (save) the paper as it is' },
   { id: 'downloadClean', scope: 'pdf', def: 'Alt+Shift+KeyS', label: 'Download a clean copy (no annotations)' },
+  { id: 'sharePages', scope: 'pdf', def: 'Alt+Shift+KeyP', label: 'Share or download some pages\u2026' },
   { id: 'markup', scope: 'pdf', def: 'KeyH', label: 'Highlighter' },
   { id: 'lines', scope: 'pdf', def: 'KeyU', label: 'Underline and strike-through' },
   { id: 'pen', scope: 'pdf', def: 'KeyP', label: 'Pen' },

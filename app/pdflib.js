@@ -2,7 +2,7 @@
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/pdflib.js'] = '2026-11-22.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/pdflib.js'] = '2026-11-23.01';
 // Clean copies: the same PDF with markup annotations (highlights, pen
 // marks, notes, shapes) removed, using pdf-lib. Links and form fields stay.
 // Marks that an app has flattened into the page itself can't be removed.
@@ -69,6 +69,50 @@ async function cleanPdf(bytes) {
     else page.node.delete(PDFName.of('Annots'));
   }
   return { bytes: await doc.save(), removed };
+}
+// Some of a PDF's pages (from and to: the PDF's own numbers, from 1), as a
+// PDF of their own: the pages with their marks, links to web pages, and
+// nothing else of the rest. Links within the PDF go (their pages may be
+// gone), and so do the ties pdf-lib would follow back to the whole file (an
+// annotation's page, a form field's other parts, article threads): copied,
+// they'd bring every page along.
+async function pagesPdf(bytes, from, to) {
+  const { PDFDocument, PDFName, PDFArray, PDFDict } = await loadPdfLib();
+  const open = data => PDFDocument.load(data, { updateMetadata: false, throwOnInvalidObject: false });
+  let src;
+  try {
+    src = await open(bytes);
+  } catch (err) {
+    if (/encrypt/i.test(String(err && err.message))) throw new Error('This PDF is password-protected, so LibLande can\u2019t take pages out of it.');
+    try { src = await open(rebuildPdf(bytes)); } catch (err2) { throw new Error('LibLande couldn\u2019t read this PDF to take pages out of it. Its file structure may be damaged.'); }
+  }
+  const N = src.getPageCount();
+  from = Math.max(1, Math.min(N, from)); to = Math.max(from, Math.min(N, to));
+  const n = k => PDFName.of(k), idx = [];
+  for (let i = from - 1; i < to; i++) idx.push(i);
+  for (const i of idx) {
+    const node = src.getPage(i).node;
+    node.delete(n('B'));
+    const annots = node.lookup(n('Annots'));
+    if (!(annots instanceof PDFArray)) { node.delete(n('Annots')); continue; }
+    const keep = [];
+    for (let j = 0; j < annots.size(); j++) {
+      const dict = annots.lookup(j);
+      if (!(dict instanceof PDFDict)) continue;
+      const type = String(dict.get(n('Subtype')) || '');
+      const act = dict.lookup(n('A'));
+      const goTo = act instanceof PDFDict && !/URI/.test(String(act.get(n('S')) || ''));
+      if (type === '/Widget' || (type === '/Link' && (dict.has(n('Dest')) || goTo))) continue;
+      ['P', 'StructParent'].forEach(k => dict.delete(n(k)));
+      keep.push(annots.get(j));
+    }
+    if (keep.length) node.set(n('Annots'), src.context.obj(keep)); else node.delete(n('Annots'));
+  }
+  const out = await PDFDocument.create({ updateMetadata: false });
+  (await out.copyPages(src, idx)).forEach(p => out.addPage(p));
+  const title = src.getTitle && src.getTitle();
+  if (title) out.setTitle(title);
+  return await out.save();
 }
 // A fresh copy of a PDF whose structure is damaged, rebuilt from its
 // objects. Some apps (PDF Expert, for one) can leave a save half-written:
