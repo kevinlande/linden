@@ -1,5 +1,5 @@
 /*
- * LibLande on GitHub Pages: the heavy work on the .bib, off the page's
+ * Linden on GitHub Pages: the heavy work on the .bib, off the page's
  * thread, so the page doesn't freeze. build.js is Build.gs, the same
  * parser Apps Script uses; builder.js has the library's build
  * (liblandeAssemble); edits.js the work on the .bib's text for a change

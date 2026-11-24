@@ -1,7 +1,7 @@
 /*
- * LibLande on GitHub Pages: building the library on this device.
+ * Linden on GitHub Pages: building the library on this device.
  *
- * The same steps as runBuild_ in Code.gs (Apps Script's, until LibLande
+ * The same steps as runBuild_ in Code.gs (Apps Script's, until Linden
  * moved), with Drive's web API: look at the .bib and the inbox; if either
  * changed (or once a day, to catch new and renamed PDFs), list the papers
  * folder, read the .bib, parse it with Build.gs (served here as build.js)
@@ -20,8 +20,12 @@
  */
 (function (root) {
   'use strict';
-  if (root.document) (root.LIBLANDE_PARTS = root.LIBLANDE_PARTS || {}).builder = '2026-11-23.01';
+  if (root.document) (root.LIBLANDE_PARTS = root.LIBLANDE_PARTS || {}).builder = '2026-11-24.01';
   const FOLDER = 'application/vnd.google-apps.folder';
+  // (The folder in Drive: "Linden" for a library made since the rename
+  // (2026-11-24), "LibLande" for one made before, which keeps its name;   // keep-name
+  // either is found.)
+  const NEW_DATA_FOLDER = 'Linden';
   const DATA_FOLDER = 'LibLande', LIBRARY_FILE = 'library.json.gz', INDEX_FILE = 'file-index.json',   // keep-name: the folder in Drive
     SETTINGS_FILE = 'settings.json', INBOX_FOLDER = 'Inbox', INBOX_FILE = 'LibLande inbox.bib';
   // As in Code.gs.
@@ -107,7 +111,7 @@
       // The newest one with that name (or null).
       named: async (parentId, name, fields, folder) =>
         (await search(query([parentId], { name, folders: folder }), fields || 'id,name,modifiedTime', 'modifiedTime desc'))[0] || null,
-      // Every file (or, folders: true, every folder) LibLande can see.
+      // Every file (or, folders: true, every folder) Linden can see.
       everything: o => search("mimeType " + (o.folders ? '=' : '!=') + " '" + FOLDER + "' and trashed = false", o.fields || 'id,name'),
       bytes: async id => (await drive('files/' + enc(id) + '?alt=media')).arrayBuffer(),
       mkdir: (parentId, name) => json('files?fields=id,name', { method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -209,10 +213,10 @@
       return value;
     }
 
-    // LibLande's folder in My Drive: the one holding the library (made,
+    // Linden's folder in My Drive: the one holding the library (made,
     // with create, when there's none).
     // (Remembered, and checked again after ten minutes: one moved to the
-    // trash, or deleted, while LibLande is open is looked for again.)
+    // trash, or deleted, while Linden is open is looked for again.)
     let dataId = null, dataChecked = 0;
     async function dataFolder(create) {
       if (dataId && Date.now() - dataChecked < 10 * 60 * 1000) return dataId;
@@ -230,15 +234,26 @@
       // (The oldest first: with limited access a second LibLande folder can
       // be made beside one it can't see, and full access keeps to the
       // first.)
-      const folders = (await S.children(S.root, { name: DATA_FOLDER, folders: true, fields: 'id,createdTime' }))
+      const folders = (await dataFolders('id,name,createdTime,appProperties'))
         .sort((a, b) => String(a.createdTime || '').localeCompare(String(b.createdTime || '')));
       for (const f of folders) {
         if (await named(f.id, LIBRARY_FILE, 'id') || await named(f.id, SETTINGS_FILE, 'id')) return (dataId = f.id);
       }
-      if (folders.length) return (dataId = folders[0].id);
+      // (Empty: a "Linden" one, or a "Linden" one this app made, never a
+      // folder of yours that happens to be called Linden.)
+      const ours = folders.filter(madeHere);
+      if (ours.length) return (dataId = ours[0].id);
       if (!create) return null;
-      const made = await S.mkdir(S.root, DATA_FOLDER);
+      const made = await S.mkdir(S.root, NEW_DATA_FOLDER);
+      await S.update(made.id, { appProperties: { liblande: 'data' } }).catch(() => {});
       return (dataId = made.id);
+    }
+    const madeHere = f => f.name === DATA_FOLDER || !!(f.appProperties && f.appProperties.liblande === 'data');
+    // (My Drive's folders by either name.)
+    async function dataFolders(fields) {
+      const out = [];
+      for (const name of [NEW_DATA_FOLDER, DATA_FOLDER]) out.push(...(await S.children(S.root, { name, folders: true, fields })).map(f => Object.assign({ name }, f)));
+      return out;
     }
 
     // Write a file in the LibLande folder (in place, keeping its ID), with
@@ -283,7 +298,7 @@
     async function relativePath(fromId, toId) {
       if (!fromId) return null;
       if (fromId === toId) return '';
-      // (A folder LibLande may not open, as with limited access: the chain
+      // (A folder Linden may not open, as with limited access: the chain
       // stops there, with just its ID.)
       const chain = async id => {
         const out = [];
@@ -311,7 +326,7 @@
     // Every file and folder under a folder, with paths from `prefix`.
     const listTree = (rootId, prefix) => S.tree(rootId, prefix);
 
-    // With limited access: every file LibLande has been given, listed (a
+    // With limited access: every file Linden has been given, listed (a
     // folder it wasn't given hides what's in it from listTree). One in a
     // folder it knows gets its path there; the rest are kept by name (null
     // for a name two have), for the .bib's links that end in that name.
@@ -325,7 +340,7 @@
         away.size ? S.everything({ folders: true, fields: 'id,parents' }) : [],
       ]);
       dirs.forEach(d => { up[d.id] = (d.parents || [])[0]; });
-      // (Up through the folders LibLande can see.)
+      // (Up through the folders Linden can see.)
       const under = id => { for (let i = 0; id && i < 64; i++, id = up[id]) if (away.has(id)) return true; return false; };
       all.forEach(f => {
         if (known.has(f.id) || /^application\/vnd\.google-apps\./.test(f.mimeType || '')) return;
@@ -345,16 +360,16 @@
       for (const l of s.libraries || []) {
         if (l.bibId === s.bibId) continue;
         if (l.papersId) { away.add(l.papersId); continue; }
-        try { const p = (await meta(l.bibId, 'parents')).parents; if (p && p[0]) away.add(p[0]); } catch (e) { /* gone, or not LibLande's */ }
+        try { const p = (await meta(l.bibId, 'parents')).parents; if (p && p[0]) away.add(p[0]); } catch (e) { /* gone, or not Linden's */ }
       }
       away.delete(papersId);
       if (bib.parents) away.delete(bib.parents[0]);
       return away;
     }
     // With limited access: the folders under the papers folder that
-    // LibLande can't see but knows are there (a PDF in one was found by its
+    // Linden can't see but knows are there (a PDF in one was found by its
     // name), as paths from the .bib's folder. (BibDesk made them after
-    // setup: they're to be given to LibLande, and never made a second
+    // setup: they're to be given to Linden, and never made a second
     // time. One merely named in the .bib may not exist: not counted.)
     function unseenFolders(data, index, prefix) {
       const out = new Set();
@@ -428,7 +443,7 @@
             const done = ev => { off(); ev.data.error ? reject(new Error(ev.data.error)) : resolve(ev.data.result); };
             const fail = ev => { off(); if (worker === w) worker = null; reject(new Error(ev.message || 'The library couldn\u2019t be read.')); };
             // (A worker that never answers, as one can when an iPad puts
-            // LibLande to sleep: given up, and the work done here instead,
+            // Linden to sleep: given up, and the work done here instead,
             // or every later build would wait for it.)
             const timer = setTimeout(() => {
               off();
@@ -489,7 +504,7 @@
       const readTexts = () => texts || (texts = Promise.all([textAt(bib.id, bib.modifiedTime), inbox ? textAt(inbox.id, inbox.modifiedTime) : Promise.resolve(null)]));
       if (changed) readTexts().catch(() => {});
       const papersId = s.papersId || (bib.parents && bib.parents[0]);
-      if (!papersId) throw new Error('LibLande can’t see the folder that holds your .bib file. Choose your papers folder in Settings.');
+      if (!papersId) throw new Error('Linden can’t see the folder that holds your .bib file. Choose your papers folder in Settings.');
       const prefix = await relativePath(bib.parents && bib.parents[0], papersId);
 
       // The papers folder's index: the saved one, unless it's for another
@@ -543,11 +558,11 @@
       const job = { main: { text: bibText, ids: index.files, opts: { built: Date.parse(bib.modifiedTime), source: bib.name, papersPrefix: prefix } } };
       if (inboxText != null) job.inbox = { text: inboxText, ids: inboxPaths, opts: { built: 0, source: INBOX_FILE, papersPrefix: '' } };
       // (Limited access: the library's parts always back, for the folders
-      // LibLande can't see.)
+      // Linden can't see.)
       if (limited) job.keep = true;
       const out = await parse(job);
       mark('parsed');
-      if (!out.entries && bibText.indexOf('@') >= 0) throw new Error('LibLande couldn\u2019t read any publications in ' + bib.name + '.');
+      if (!out.entries && bibText.indexOf('@') >= 0) throw new Error('Linden couldn\u2019t read any publications in ' + bib.name + '.');
       // Linked files the index doesn't have yet: looked up, then the
       // library put together here.
       if (out.data) {
@@ -573,7 +588,7 @@
       mark('saved');
       // The reading list follows the "Reading List" group: not waited for.
       if (io.reconcile) io.reconcile(out.groups).catch(e => console.warn('Reading list:', e.message));
-      console.log('LibLande build (on this device): ' + times.join(', ') + '; total ' + ((Date.now() - started) / 1000).toFixed(1) + ' s');
+      console.log('Linden build (on this device): ' + times.join(', ') + '; total ' + ((Date.now() - started) / 1000).toFixed(1) + ' s');
       // (gz: the library itself, so the page needn't download it again.)
       return { built: true, id: saved.id, stamp: Date.parse(saved.modifiedTime), entries: out.entries, gz: out.gz };
     }
@@ -598,8 +613,8 @@
       forgetDataFolder();
       const found = await dataFolder();
       if (found !== id) return { ok: false };
-      const others = (await S.children(S.root, { name: DATA_FOLDER, folders: true, fields: 'id' })).filter(f => f.id !== id);
-      for (const f of others) await S.update(f.id, { name: DATA_FOLDER + ' (unused)' });
+      const others = (await dataFolders('id,name,appProperties')).filter(f => f.id !== id && madeHere(f));
+      for (const f of others) await S.update(f.id, { name: (f.name || DATA_FOLDER) + ' (unused)' });
       forgetDataFolder();
       return { ok: true, renamed: others.length };
     }

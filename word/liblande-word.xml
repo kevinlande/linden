@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- LibLande for Word: cite from your LibLande library while you write.
+<!-- Linden for Word: cite from your Linden library while you write.
      Copied into Word's add-ins folder on the Mac
      (~/Library/Containers/com.microsoft.Word/Data/Documents/wef), it adds a
-     LibLande button to the Home tab. (Its own Id: sharing the test
+     Linden button to the Home tab. (Its own Id: sharing the test
      add-in's, Word kept showing that one from its cache.) -->
 <OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -10,14 +10,14 @@
            xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
            xsi:type="TaskPaneApp">
   <Id>55318a69-6af9-44a2-a8a3-cc069fedbeef</Id>
-  <Version>1.3.0.0</Version>
+  <Version>1.4.0.0</Version>
   <ProviderName>Kevin Lande</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="LibLande"/>
-  <Description DefaultValue="Cite from your LibLande library while you write."/>
-  <IconUrl DefaultValue="https://kevinlande.github.io/liblande/word/icons/icon-32.png"/>
-  <HighResolutionIconUrl DefaultValue="https://kevinlande.github.io/liblande/word/icons/icon-64.png"/>
-  <SupportUrl DefaultValue="https://kevinlande.github.io/liblande/"/>
+  <DisplayName DefaultValue="Linden"/>
+  <Description DefaultValue="Linden, library and reader: cite from your library while you write."/>
+  <IconUrl DefaultValue="https://kevinlande.github.io/linden/word/icons/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://kevinlande.github.io/linden/word/icons/icon-64.png"/>
+  <SupportUrl DefaultValue="https://kevinlande.github.io/linden/"/>
   <AppDomains>
     <AppDomain>https://accounts.google.com</AppDomain>
     <AppDomain>https://kevinlande.github.io</AppDomain>
@@ -26,7 +26,7 @@
     <Host Name="Document"/>
   </Hosts>
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://kevinlande.github.io/liblande/word/index.html"/>
+    <SourceLocation DefaultValue="https://kevinlande.github.io/linden/word/index.html"/>
   </DefaultSettings>
   <Permissions>ReadWriteDocument</Permissions>
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
@@ -67,19 +67,19 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16" DefaultValue="https://kevinlande.github.io/liblande/word/icons/icon-16.png"/>
-        <bt:Image id="Icon.32" DefaultValue="https://kevinlande.github.io/liblande/word/icons/icon-32.png"/>
-        <bt:Image id="Icon.80" DefaultValue="https://kevinlande.github.io/liblande/word/icons/icon-80.png"/>
+        <bt:Image id="Icon.16" DefaultValue="https://kevinlande.github.io/linden/word/icons/icon-16.png"/>
+        <bt:Image id="Icon.32" DefaultValue="https://kevinlande.github.io/linden/word/icons/icon-32.png"/>
+        <bt:Image id="Icon.80" DefaultValue="https://kevinlande.github.io/linden/word/icons/icon-80.png"/>
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="Panel.Url" DefaultValue="https://kevinlande.github.io/liblande/word/index.html"/>
+        <bt:Url id="Panel.Url" DefaultValue="https://kevinlande.github.io/linden/word/index.html"/>
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="Group.Label" DefaultValue="LibLande"/>
-        <bt:String id="Button.Label" DefaultValue="LibLande"/>
+        <bt:String id="Group.Label" DefaultValue="Linden"/>
+        <bt:String id="Button.Label" DefaultValue="Linden"/>
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="Button.Tip" DefaultValue="Cite from your LibLande library."/>
+        <bt:String id="Button.Tip" DefaultValue="Cite from your Linden library."/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

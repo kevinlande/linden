@@ -1,9 +1,10 @@
 {
- "name": "LibLande",
- "short_name": "LibLande",
+ "name": "Linden",
+ "short_name": "Linden",
  "start_url": "./",
  "scope": "./",
  "id": "./",
+ "description": "Linden: library and reader",
  "display": "standalone",
  "background_color": "#1b2321",
  "theme_color": "#f7f9f8",

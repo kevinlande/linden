@@ -1,11 +1,11 @@
-﻿// LibLande: Citation styles: APA (LibLande's own), or any of the styles Zotero uses (CSL, through citeproc-js), for Copy, Quote, the QR code, Export and Cite Check.
+﻿// Linden: Citation styles: APA (Linden's own), or any of the styles Zotero uses (CSL, through citeproc-js), for Copy, Quote, the QR code, Export and Cite Check.
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/cite.js'] = '2026-11-23.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/cite.js'] = '2026-11-24.01';
 /* ------------------------------------------------------------ citation styles */
 // Your citation style, chosen in Settings > Citing, kept with your account:
-// APA by default, which LibLande formats itself (apaCitation, apaInText:
+// APA by default, which Linden formats itself (apaCitation, apaInText:
 // nothing to download). Any other is a CSL style from the repository
 // Zotero uses (10,000-odd: journals, publishers, universities), formatted
 // by citeproc-js, the engine Zotero uses: the style's file (and, for a
@@ -85,7 +85,7 @@ async function cslLocale(lang) {
   }
   return (CITE.locales[lang] = xml);
 }
-// The engine for a style, made once: null for APA (LibLande's own).
+// The engine for a style, made once: null for APA (Linden's own).
 function citeLoad(id = CITE.id) {
   if (id === 'apa') return Promise.resolve(null);
   if (CITE.engines.has(id)) return Promise.resolve(CITE.engines.get(id));
@@ -194,7 +194,7 @@ function citeMerge(prefs) {
   }
   if (CITE.id !== 'apa') citeLoad().catch(() => {});
 }
-// (A style chosen on this device: made ready as LibLande opens.)
+// (A style chosen on this device: made ready as Linden opens.)
 if (CITE.id !== 'apa') setTimeout(() => citeLoad().catch(() => {}), 1500);
 // Menus' and Settings' names for the style.
 function citeLabels() {

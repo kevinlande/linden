@@ -1,4 +1,4 @@
-// LibLande for Word: the citations' text, worked out for the whole
+// Linden for Word: the citations' text, worked out for the whole
 // document at once (APA 7th edition), and the References list. No Word in
 // here: given the document's citations and the library, it says what each
 // citation reads and what the list holds. Uses app/apa.js (apaCitationOf,

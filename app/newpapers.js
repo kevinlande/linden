@@ -1,13 +1,13 @@
-﻿// LibLande: New papers: new work that cites yours, by authors you follow, like papers you choose, and in your journals.
+﻿// Linden: New papers: new work that cites yours, by authors you follow, like papers you choose, and in your journals.
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/newpapers.js'] = '2026-11-23.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/newpapers.js'] = '2026-11-24.01';
 /* ------------------------------------------------------------ new papers */
 // Found with OpenAlex (citations, authors, journals) and Semantic Scholar
 // (papers like your examples), asked from this page: no key, and no email
 // sent; they see the DOIs, names and journals looked up. Checked at most
-// once a day, while LibLande is open, and with Check now. What you follow
+// once a day, while Linden is open, and with Check now. What you follow
 // and what you dismiss go to your other devices with your preferences;
 // what was found is kept on this device.
 const NP_JOURNALS = [
@@ -265,7 +265,7 @@ function npCheck() {
   });
   return NP.busy;
 }
-// Once a day, a little after LibLande opens.
+// Once a day, a little after Linden opens.
 let npAutoSet = false;
 function npAuto() {
   if (npAutoSet) return;
@@ -346,7 +346,7 @@ function npRender() {
       `<div class="np-abs"${NP_OPEN.has(x.id) ? '' : ' hidden'}>${NP_OPEN.has(x.id) ? esc(NP_ABS.get(x.id) || 'No abstract.') : ''}${x.url ? ` <a href="${esc(x.url)}" target="_blank" rel="noopener">Its page \u2197</a>` : ''}</div></div>` +
       `<div class="np-acts">${x.doi && gs ? `<button type="button" class="np-add" data-np-add title="Add to your library" aria-label="Add \u201c${esc(x.title)}\u201d to your library">${ICON.plus}</button><button type="button" class="np-q" data-np-rl title="Add, and put it on your reading list" aria-label="Add \u201c${esc(x.title)}\u201d and put it on your reading list">${ICON.bookmark}</button>` : ''}` +
       `<button type="button" class="np-q" data-np-gone title="Dismiss" aria-label="Dismiss \u201c${esc(x.title)}\u201d">${ICON.x}</button></div></div>`; }).join('') + `</div>`
-      : `<p class="ms-dim np-none">${NP.busy ? 'Looking\u2026' : NP.checked ? 'Nothing new. Checked again tomorrow.' : 'LibLande looks for new papers once a day.'}</p>`);
+      : `<p class="ms-dim np-none">${NP.busy ? 'Looking\u2026' : NP.checked ? 'Nothing new. Checked again tomorrow.' : 'Linden looks for new papers once a day.'}</p>`);
 }
 // (The journal chosen, scrolled into view in its row.)
 function npShowJournal() {
@@ -462,7 +462,7 @@ function npfRender() {
   const sw = k => `<span class="switch"><input type="checkbox" role="switch" data-npf-on="${k}"${c.on[k] ? ' checked' : ''}><span aria-hidden="true"></span></span>`;
   const chip = (kind, i, label, title) => `<span class="np-chip" title="${esc(title || label)}">${esc(label)}<button type="button" data-npf-del="${kind}:${i}" aria-label="Stop following ${esc(label)}">${ICON.x}</button></span>`;
   box.innerHTML = '' +
-    `<p class="sheet-note">LibLande asks OpenAlex and Semantic Scholar from this device. They see the DOIs, names and journals it asks about, never your email or your .bib file.</p>` +
+    `<p class="sheet-note">Linden asks OpenAlex and Semantic Scholar from this device. They see the DOIs, names and journals it asks about, never your email or your .bib file.</p>` +
     `<section class="npf-sec"><div class="npf-head"><span class="set-name">Papers that cite yours</span>${sw('cites')}</div>` +
     `<label class="npf-row">Your papers <select data-npf-sel="mine"><option value="">None chosen</option>${opts(c.mine)}</select></label>` +
     `<p class="hint">${mine.length ? mine.length + ' publication' + (mine.length === 1 ? '' : 's') + (withDoi < mine.length ? ', ' + withDoi + ' with a DOI (only those can be followed)' : '') : 'Choose the list or saved search that has your own papers.'}</p></section>` +

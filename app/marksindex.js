@@ -1,15 +1,15 @@
-﻿// LibLande: the PDFs' highlights and notes, indexed, for the library's search in "Notes & highlights".
+﻿// Linden: the PDFs' highlights and notes, indexed, for the library's search in "Notes & highlights".
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/marksindex.js'] = '2026-11-23.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/marksindex.js'] = '2026-11-24.01';
 /* ------------------------------------------------------------ the index */
 // Each PDF's highlights (their words, page and note), read from the PDF
 // once and kept in LibLande/marks.json in Drive, so every device can
 // search them. It's built on a Mac, in the background, a PDF at a time
 // (not while a paper is open in the reader), and saved every so often, so
 // it can stop and go on later. After that, Drive's list of changes says
-// which PDFs changed since (in LibLande or elsewhere), and those are read
+// which PDFs changed since (in Linden or elsewhere), and those are read
 // again. A phone or iPad searches it but doesn't build it.
 const MX = { data: null, loading: null, ver: 0, running: false, pending: {}, gone: [], lastPut: 0 };
 const mxCan = () => !!(window.LIBLANDE_PAGES && !window.LIBLANDE_TEST && gs && /Mac/.test(navigator.platform) && navigator.maxTouchPoints < 2);
@@ -139,7 +139,7 @@ function mxStatus() {
   if (!all.size) return '';
   if (have >= all.size) return 'Searching notes and highlights in ' + all.size.toLocaleString() + ' PDFs';
   const of = 'Highlights in ' + have.toLocaleString() + ' of ' + all.size.toLocaleString() + ' PDFs';
-  if (!mxCan()) return of + ': LibLande reads them while it\u2019s open on a Mac';
+  if (!mxCan()) return of + ': Linden reads them while it\u2019s open on a Mac';
   return of + (!MX.running ? ' \u00b7 more soon' : !$('#viewer').hidden ? ' \u00b7 paused while a paper is open' : ' \u00b7 reading the rest\u2026');
 }
 function mxShowStatus() { if (state.scope === 'notes' && $('#statusR')) $('#statusR').textContent = mxStatus(); }

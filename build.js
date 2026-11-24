@@ -1,5 +1,5 @@
 /**
- * LibLande: turn a BibDesk .bib file into the page's library data.
+ * Linden: turn a BibDesk .bib file into the page's library data.
  * A JavaScript port of build.py. Plain JavaScript with no Apps Script calls,
  * so it can also be tested in a browser.
  *
@@ -448,15 +448,15 @@ function locateEntry_(text, key) {
     if (type === 'comment' || type === 'string' || type === 'preamble') continue;
     const comma = text.indexOf(',', bodyStart);
     if (comma < 0 || comma > end || text.slice(bodyStart, comma).trim() !== key) continue;
-    if (found) throw new Error('The cite key ' + key + ' appears more than once in the file, so LibLande won\u2019t edit it.');
+    if (found) throw new Error('The cite key ' + key + ' appears more than once in the file, so Linden won\u2019t edit it.');
     found = { start: m.index, end, type, fieldsStart: comma + 1, fieldsEnd: end - 1 };
   }
-  if (!found) throw new Error('LibLande couldn\u2019t find ' + key + ' in the file. It may have been renamed or deleted in BibDesk; tap Refresh.');
+  if (!found) throw new Error('Linden couldn\u2019t find ' + key + ' in the file. It may have been renamed or deleted in BibDesk; tap Refresh.');
   // The entry must end where the next one (or the end of the file) begins:
   // otherwise its braces were read wrong, and an edit would break the file.
   const next = text.slice(found.end, found.end + 4000).match(/^\s*(\S)/);
   if (next && next[1] !== '@' && next[1] !== '%') {
-    throw new Error('LibLande couldn\u2019t tell where ' + key + ' ends in the file, so it won\u2019t edit it. Edit it in BibDesk instead.');
+    throw new Error('Linden couldn\u2019t tell where ' + key + ' ends in the file, so it won\u2019t edit it. Edit it in BibDesk instead.');
   }
   found.fields = fieldSpans_(text, found.fieldsStart, found.fieldsEnd);
   return found;
@@ -540,7 +540,7 @@ function editGroups_(text, key, add, remove) {
     if (km) return d.replace(km[0], () => km[1] + str + km[3]);
     const empty = /<key>keys<\/key>\s*<string\/>/.exec(d);
     if (empty) return d.replace(empty[0], () => '<key>keys</key>\n\t\t<string>' + str + '</string>');
-    throw new Error('LibLande couldn\u2019t update the group \u201c' + name + '\u201d.');
+    throw new Error('Linden couldn\u2019t update the group \u201c' + name + '\u201d.');
   });
   if (todo.size) throw new Error('There\u2019s no static group named \u201c' + Array.from(todo)[0] + '\u201d.');
   return text.slice(0, at) + block + text.slice(end);
@@ -649,13 +649,13 @@ function ensureStaticGroup_(text, name) {
   const block = text.slice(at, end);
   if (staticGroups_([block.slice('@comment{'.length, -1)]).some(g => g.name === name)) return text;
   const close = block.lastIndexOf('</array>');
-  if (close < 0) throw new Error('LibLande couldn' + '\u2019' + 't read your static groups.');
+  if (close < 0) throw new Error('Linden couldn' + '\u2019' + 't read your static groups.');
   return text.slice(0, at) + block.slice(0, close) + dict + block.slice(close) + text.slice(end);
 }
 
 // A new cite key for an entry: the entry itself, the static groups that
 // list it, and other entries' crossref, xdata, related and versionof fields that
-// name it. (LaTeX documents that cite the old key aren't LibLande's to
+// name it. (LaTeX documents that cite the old key aren't Linden's to
 // change.)
 const KEY_LINK_FIELDS_ = ['crossref', 'xdata', 'related', 'versionof'];
 function renameKey_(text, oldKey, newKey) {
@@ -693,7 +693,7 @@ function renameKey_(text, oldKey, newKey) {
 // The rename came out right: the same entries under the new name, and
 // every group and link that had the old key now has the new one.
 function checkRename_(before, after, oldKey, newKey) {
-  const fail = () => { throw new Error('The new cite key didn\u2019t come out as expected, so LibLande didn\u2019t save it.'); };
+  const fail = () => { throw new Error('The new cite key didn\u2019t come out as expected, so Linden didn\u2019t save it.'); };
   const a = parseBib_(before), b = parseBib_(after);
   if (a[0].length !== b[0].length || b[0].some(e => e[1] === oldKey) || b[0].filter(e => e[1] === newKey).length !== 1) fail();
   const ga = staticGroups_(a[1]), gb = staticGroups_(b[1]);
@@ -705,4 +705,4 @@ function checkRename_(before, after, oldKey, newKey) {
   return b;
 }
 
-;if (self.document) (self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {}).build = '2026-11-23.01';
+;if (self.document) (self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {}).build = '2026-11-24.01';

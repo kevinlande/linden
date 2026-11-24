@@ -1,8 +1,8 @@
-﻿// LibLande: Keywords: suggested for a publication (in Add, Edit and its details), and Tidy keywords, for the whole library.
+﻿// Linden: Keywords: suggested for a publication (in Add, Edit and its details), and Tidy keywords, for the whole library.
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/keywords.js'] = '2026-11-23.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/keywords.js'] = '2026-11-24.01';
 /* ------------------------------------------------------------ suggested keywords */
 // Suggested from your own keywords: those of the publications most like
 // this one (by the words of their titles and abstracts, their authors and
@@ -382,7 +382,7 @@ async function saveKwTidy() {
     const searches = SMART.list.filter(x => /\bkw:/i.test(x.q) && [...gone].some(k => norm(x.q).includes(k))).map(x => '\u201c' + x.name + '\u201d');
     const skipped = res.skipped || [];
     toast('Changed the keywords of ' + done.toLocaleString() + ' publication' + (done === 1 ? '' : 's') +
-      (skipped.length ? '; ' + skipped.length + ' left as they were (changed elsewhere since LibLande read them)' : '') +
+      (skipped.length ? '; ' + skipped.length + ' left as they were (changed elsewhere since Linden read them)' : '') +
       (searches.length ? '. Check the saved search' + (searches.length === 1 ? ' ' : 'es ') + searches.join(', ') + ': ' + (searches.length === 1 ? 'it looks' : 'they look') + ' for a keyword changed.' : ''), skipped.length || searches.length ? 9000 : 4000);
   } catch (err) {
     if (sheet === s) sheetMsg(errText(err), true);

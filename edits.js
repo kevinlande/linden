@@ -1,5 +1,5 @@
 /*
- * LibLande on GitHub Pages: changing the .bib, on this device.
+ * Linden on GitHub Pages: changing the .bib, on this device.
  *
  * The same functions as Code.gs (saveEntry, addToMain, attachPdf,
  * createGroup, readingOps, renameKey), every change straight into the .bib
@@ -19,11 +19,11 @@
  */
 (function (root) {
   'use strict';
-  if (root.document) (root.LIBLANDE_PARTS = root.LIBLANDE_PARTS || {}).edits = '2026-11-23.01';
+  if (root.document) (root.LIBLANDE_PARTS = root.LIBLANDE_PARTS || {}).edits = '2026-11-24.01';
   const READING_FILE = 'reading-list.json',
     INBOX_FOLDER = 'Inbox', INBOX_FILE = 'LibLande inbox.bib', BACKUP_FOLDER = 'Backups';
   const READING_GROUP = '★ Reading List';
-  const BUSY = 'LibLande is updating your library right now. Try again in a minute.';
+  const BUSY = 'Linden is updating your library right now. Try again in a minute.';
   const pad = n => String(n).padStart(2, '0');
   // The time in a backup copy's name ("Library 2026-10-21 175041.bib"),
   // or null for a file that isn't a copy of this one.
@@ -84,27 +84,27 @@
       // before, its answer lost, and sent again.)
       if (edited === text && (clash || req.expectGroupsHash || req.expectStamp) && (Object.keys(req.set || {}).length || changingGroups)) return { text: null, hash: hashOf(text, req.key), already: true, gh: groupsHashOf(before) };
       if (stamp != null && !req.expectHash && req.expectStamp && stamp !== req.expectStamp) {
-        throw new Error(fileName + ' has changed since LibLande last read it (perhaps it was saved in BibDesk). ' + CHANGED);
+        throw new Error(fileName + ' has changed since Linden last read it (perhaps it was saved in BibDesk). ' + CHANGED);
       }
       if (changingGroups && req.expectGroupsHash && groupsHashOf(before) !== req.expectGroupsHash) {
-        throw new Error('Your static groups have been changed since LibLande last read them (perhaps in BibDesk). ' + CHANGED);
+        throw new Error('Your static groups have been changed since Linden last read them (perhaps in BibDesk). ' + CHANGED);
       }
       // Changed since it was read: a clash, unless the change is already
       // there exactly (to its date-modified), as when this edit reached
       // Drive before but its answer was lost, and it's made again.
       if (clash) {
         if (edited === text && Object.keys(set).length) return { text: null, hash: hashOf(text, req.key), already: true };
-        throw new Error('This publication has been changed since LibLande last read it (perhaps in BibDesk). ' + CHANGED);
+        throw new Error('This publication has been changed since Linden last read it (perhaps in BibDesk). ' + CHANGED);
       }
       if (edited === text) return { text: null };
       // Checked before writing: same entries, and exactly the requested changes.
       const after = parseBib_(edited);
-      if (after[0].length !== before[0].length) throw new Error('The edit would have changed the number of entries, so LibLande didn’t save it.');
+      if (after[0].length !== before[0].length) throw new Error('The edit would have changed the number of entries, so Linden didn’t save it.');
       const entry = after[0].find(e => e[1] === req.key);
       Object.keys(set).forEach(n => {
         const want = set[n] == null ? '' : String(set[n]);
         const got = entry && entry[2][n] !== undefined ? entry[2][n] : '';
-        if (got !== want) throw new Error('The ' + n + ' field didn’t come out as expected, so LibLande didn’t save it.');
+        if (got !== want) throw new Error('The ' + n + ' field didn’t come out as expected, so Linden didn’t save it.');
       });
       if (req.groups) {
         const groups = staticGroups_(after[1]);
@@ -112,7 +112,7 @@
           const g = groups.find(x => x.name === name);
           const inIt = !!g && g.keys.indexOf(req.key) >= 0;
           if (!g || inIt !== (req.groups.add || []).indexOf(name) >= 0) {
-            throw new Error('The group “' + name + '” didn’t come out as expected, so LibLande didn’t save it.');
+            throw new Error('The group “' + name + '” didn’t come out as expected, so Linden didn’t save it.');
           }
         });
       }
@@ -130,7 +130,7 @@
       const after = parseBib_(edited);
       const group = staticGroups_(after[1]).find(g => g.name === name);
       if (after[0].length !== before[0].length || !group || keys.some(k => group.keys.indexOf(k) < 0)) {
-        throw new Error('The new group didn’t come out as expected, so LibLande didn’t save it.');
+        throw new Error('The new group didn’t come out as expected, so Linden didn’t save it.');
       }
       const hashes = {};
       keys.forEach(k => { hashes[k] = hashOf(edited, k); });
@@ -149,7 +149,7 @@
       const group = staticGroups_(after[1]).find(g => g.name === name);
       if (after[0].length !== parsed[0].length || !group ||
           add.some(k => inBib.has(k) && group.keys.indexOf(k) < 0) || remove.some(k => group.keys.indexOf(k) >= 0)) {
-        throw new Error('The reading-list group didn’t come out right, so LibLande didn’t save it.');
+        throw new Error('The reading-list group didn’t come out right, so Linden didn’t save it.');
       }
       return { text: edited, gh: groupsHashOf(after), groupKeys: group.keys };
     },
@@ -164,7 +164,7 @@
       const next = appendEntry_(text, bibEntryText_(type, key, fields));
       const after = parseBib_(next)[0];
       if (after.length !== before.length + 1 || !after.some(e => e[1] === key)) {
-        throw new Error('The new entry didn’t come out right, so LibLande didn’t save it.');
+        throw new Error('The new entry didn’t come out right, so Linden didn’t save it.');
       }
       return { text: next, hash: hashOf(next, key) };
     },
@@ -184,14 +184,14 @@
       adds = adds || []; removes = removes || [];
       const have = new Set(before.map(e => e[1]));
       adds.forEach(a => {
-        if (have.has(a.key)) throw new Error('There\u2019s already a publication with the cite key ' + a.key + ', so LibLande didn\u2019t save the changes.');
+        if (have.has(a.key)) throw new Error('There\u2019s already a publication with the cite key ' + a.key + ', so Linden didn\u2019t save the changes.');
         have.add(a.key);
         cur = appendEntry_(cur, bibEntryText_(a.type, a.key, a.fields));
       });
       const grouped = new Set(staticGroups_(parseBib_(text)[1]).flatMap(g => g.keys));
       removes.forEach(r => {
-        if (r.expectHash && hashOf(cur, r.key) !== r.expectHash) throw new Error(r.key + ' has been changed since it was added, so LibLande didn\u2019t take it out.');
-        if (grouped.has(r.key)) throw new Error(r.key + ' is in a static group, so LibLande didn\u2019t take it out.');
+        if (r.expectHash && hashOf(cur, r.key) !== r.expectHash) throw new Error(r.key + ' has been changed since it was added, so Linden didn\u2019t take it out.');
+        if (grouped.has(r.key)) throw new Error(r.key + ' is in a static group, so Linden didn\u2019t take it out.');
         const loc = locateEntry_(cur, r.key);
         let s = loc.start;
         while (s > 0 && /\s/.test(cur[s - 1])) s--;
@@ -199,7 +199,7 @@
       });
       for (const it of items) {
         try {
-          if (it.expectHash && hashOf(cur, it.key) !== it.expectHash) throw new Error('It has been changed since LibLande last read it (perhaps in BibDesk).');
+          if (it.expectHash && hashOf(cur, it.key) !== it.expectHash) throw new Error('It has been changed since Linden last read it (perhaps in BibDesk).');
           const fields = it.set && Object.keys(it.set).length;
           const set = fields ? Object.assign({}, it.set, { 'date-modified': modified }) : {};
           const g = it.groups || {}, add = g.add || [], remove = g.remove || [];
@@ -214,19 +214,19 @@
       }
       if (!applied.length && !adds.length && !removes.length) return { text: null, hashes: {}, skipped };
       const after = parseBib_(cur)[0];
-      if (after.length !== before.length + adds.length - removes.length) throw new Error('The updates would have changed the number of entries, so LibLande didn\u2019t save them.');
+      if (after.length !== before.length + adds.length - removes.length) throw new Error('The updates would have changed the number of entries, so Linden didn\u2019t save them.');
       const keysAfter = new Set(after.map(e => e[1]));
-      if (adds.some(a => !keysAfter.has(a.key)) || removes.some(r => keysAfter.has(r.key))) throw new Error('The publications added or taken out didn\u2019t come out as expected, so LibLande didn\u2019t save the changes.');
+      if (adds.some(a => !keysAfter.has(a.key)) || removes.some(r => keysAfter.has(r.key))) throw new Error('The publications added or taken out didn\u2019t come out as expected, so Linden didn\u2019t save the changes.');
       const byKey = new Map(after.map(e => [e[1], e]));
       applied.forEach(a => Object.keys(a.set).forEach(n => {
         const want = a.set[n] == null ? '' : String(a.set[n]), e = byKey.get(a.key);
         const got = e && e[2][n] !== undefined ? e[2][n] : '';
-        if (got !== want) throw new Error('The ' + n + ' field of ' + a.key + ' didn\u2019t come out as expected, so LibLande didn\u2019t save the updates.');
+        if (got !== want) throw new Error('The ' + n + ' field of ' + a.key + ' didn\u2019t come out as expected, so Linden didn\u2019t save the updates.');
       }));
       const groups = staticGroups_(parseBib_(cur)[1]);
       applied.forEach(a => {
         const inG = name => { const g = groups.find(x => x.name === name); return !!g && g.keys.indexOf(a.key) >= 0; };
-        if (a.add.some(n => !inG(n)) || a.remove.some(n => inG(n))) throw new Error('The groups of ' + a.key + ' didn\u2019t come out as expected, so LibLande didn\u2019t save the changes.');
+        if (a.add.some(n => !inG(n)) || a.remove.some(n => inG(n))) throw new Error('The groups of ' + a.key + ' didn\u2019t come out as expected, so Linden didn\u2019t save the changes.');
       });
       const hashes = {};
       applied.forEach(a => { hashes[a.key] = hashOf(cur, a.key); });
@@ -239,7 +239,7 @@
     trashEntry(text, key, expectHash) {
       const before = parseBib_(text);
       if (!before[0].some(e => e[1] === key)) throw new Error(key + ' isn\u2019t in the library any more. ' + CHANGED);
-      if (expectHash && hashOf(text, key) !== expectHash) throw new Error('This publication has been changed since LibLande last read it (perhaps in BibDesk). ' + CHANGED);
+      if (expectHash && hashOf(text, key) !== expectHash) throw new Error('This publication has been changed since Linden last read it (perhaps in BibDesk). ' + CHANGED);
       const groups = staticGroups_(before[1]).filter(g => g.keys.indexOf(key) >= 0).map(g => g.name);
       const loc0 = locateEntry_(text, key), entry = text.slice(loc0.start, loc0.end);
       let cur = groups.length ? editGroups_(text, key, [], groups) : text;
@@ -248,12 +248,12 @@
       while (s > 0 && /\s/.test(cur[s - 1])) s--;
       // (Only the entry, and the space before it, taken out.)
       const cut = cur.slice(s, loc.end);
-      if (cut.trim() !== entry.trim()) throw new Error('LibLande couldn\u2019t find just ' + key + '\u2019s entry, so it didn\u2019t take it out.');
+      if (cut.trim() !== entry.trim()) throw new Error('Linden couldn\u2019t find just ' + key + '\u2019s entry, so it didn\u2019t take it out.');
       cur = cur.slice(0, s) + cur.slice(loc.end);
       const after = parseBib_(cur);
-      if (after[0].length !== before[0].length - 1 || after[0].some(e => e[1] === key)) throw new Error('Taking out ' + key + ' didn\u2019t come out as expected, so LibLande didn\u2019t save it.');
-      if (staticGroups_(after[1]).some(g => g.keys.indexOf(key) >= 0)) throw new Error(key + ' is still in a group, so LibLande didn\u2019t save it.');
-      if (staticGroups_(after[1]).length !== staticGroups_(before[1]).length) throw new Error('The groups didn\u2019t come out as expected, so LibLande didn\u2019t save it.');
+      if (after[0].length !== before[0].length - 1 || after[0].some(e => e[1] === key)) throw new Error('Taking out ' + key + ' didn\u2019t come out as expected, so Linden didn\u2019t save it.');
+      if (staticGroups_(after[1]).some(g => g.keys.indexOf(key) >= 0)) throw new Error(key + ' is still in a group, so Linden didn\u2019t save it.');
+      if (staticGroups_(after[1]).length !== staticGroups_(before[1]).length) throw new Error('The groups didn\u2019t come out as expected, so Linden didn\u2019t save it.');
       return { text: cur, entry, groups, gh: groupsHashOf(after) };
     },
     // Back from the Trash: its text at the end, as it was (with a new key,
@@ -270,11 +270,11 @@
       (groups || []).forEach(name => { cur = ensureStaticGroup_(cur, name); });
       if ((groups || []).length) cur = editGroups_(cur, use, groups, []);
       const after = parseBib_(cur);
-      if (after[0].length !== before[0].length + 1 || !after[0].some(e => e[1] === use)) throw new Error('Putting back ' + use + ' didn\u2019t come out as expected, so LibLande didn\u2019t save it.');
+      if (after[0].length !== before[0].length + 1 || !after[0].some(e => e[1] === use)) throw new Error('Putting back ' + use + ' didn\u2019t come out as expected, so Linden didn\u2019t save it.');
       const loc = locateEntry_(cur, use);
-      if (cur.slice(loc.start, loc.end).trim() !== body.trim()) throw new Error('Putting back ' + use + ' changed its text, so LibLande didn\u2019t save it.');
+      if (cur.slice(loc.start, loc.end).trim() !== body.trim()) throw new Error('Putting back ' + use + ' changed its text, so Linden didn\u2019t save it.');
       const gs = staticGroups_(after[1]);
-      if ((groups || []).some(name => !gs.some(g => g.name === name && g.keys.indexOf(use) >= 0))) throw new Error('Putting ' + use + ' back in its groups didn\u2019t come out as expected, so LibLande didn\u2019t save it.');
+      if ((groups || []).some(name => !gs.some(g => g.name === name && g.keys.indexOf(use) >= 0))) throw new Error('Putting ' + use + ' back in its groups didn\u2019t come out as expected, so Linden didn\u2019t save it.');
       return { text: cur, hash: hashOf(cur, use), key: use, gh: groupsHashOf(after) };
     },
     // A new cite key (renameKey_ and checkRename_ in Build.gs).
@@ -287,7 +287,7 @@
       }
       const loc = locateEntry_(text, req.key);
       if (req.expectHash && fingerprint_(text.slice(loc.start, loc.end)) !== req.expectHash) {
-        throw new Error('This publication has been changed since LibLande last read it (perhaps in BibDesk). Tap Refresh, wait for the library to update, and try again.');
+        throw new Error('This publication has been changed since Linden last read it (perhaps in BibDesk). Tap Refresh, wait for the library to update, and try again.');
       }
       const newKey = String(req.newKey || '').trim();
       const edited = renameKey_(text, req.key, newKey);
@@ -312,7 +312,7 @@
       raws.forEach(r => { next = appendEntry_(next, r); });
       const after = parseBib_(next)[0];
       if (after.length !== before.length + raws.length || keys.some(k => !after.some(e => e[1] === k))) {
-        throw new Error('The copied entries didn\u2019t come out right, so LibLande didn\u2019t save them.');
+        throw new Error('The copied entries didn\u2019t come out right, so Linden didn\u2019t save them.');
       }
       return { text: next };
     },
@@ -347,7 +347,7 @@
       }
       const after = parseBib_(next)[0];
       if (after.length !== before.length || after.some((e, i) => e[1] !== before[i][1])) {
-        throw new Error('The imported entries didn\u2019t come out right, so LibLande didn\u2019t save them.');
+        throw new Error('The imported entries didn\u2019t come out right, so Linden didn\u2019t save them.');
       }
       return { text: next };
     },
@@ -355,7 +355,7 @@
     attachPrepare(text, req) {
       const loc = locateEntry_(text, req.key);
       if (req.expectHash && fingerprint_(text.slice(loc.start, loc.end)) !== req.expectHash) {
-        throw new Error('This publication has been changed since LibLande last read it (perhaps in BibDesk). ' +
+        throw new Error('This publication has been changed since Linden last read it (perhaps in BibDesk). ' +
           'Tap Refresh, wait for the library to update, and try again.');
       }
       const fields = parseBib_(text.slice(loc.start, loc.end))[0][0][2];
@@ -371,7 +371,7 @@
       const before = parseBib_(text)[0], after = parseBib_(edited)[0];
       const entry = after.find(e => e[1] === req.key);
       if (after.length !== before.length || !entry || entry[2]['bdsk-file-' + n] !== set['bdsk-file-' + n]) {
-        throw new Error('The link didn’t come out right, so LibLande didn’t save it.');
+        throw new Error('The link didn’t come out right, so Linden didn’t save it.');
       }
       return { text: edited, hash: hashOf(edited, req.key) };
     },
@@ -418,7 +418,7 @@
     async function settings() { return B.settings(false); }
     const mainBibId = async () => {
       const s = await settings();
-      if (!s || !s.bibId) throw new Error('LibLande isn’t set up yet.');
+      if (!s || !s.bibId) throw new Error('Linden isn’t set up yet.');
       return s.bibId;
     };
     async function inboxFile(create) {
@@ -426,7 +426,7 @@
       if (!folder) return null;
       const f = await B.named(folder.id, INBOX_FILE, 'id');
       if (f || !create) return f ? f.id : null;
-      const made = await B.writeFile(folder.id, INBOX_FILE, '%% LibLande inbox: publications added in LibLande.\n' +
+      const made = await B.writeFile(folder.id, INBOX_FILE, '%% LibLande inbox: publications added in Linden.\n' +
         '%% To move them into your library, open this file in BibDesk and drag them in.\n\n', 'text/plain');
       return made.id;
     }
@@ -437,7 +437,7 @@
     async function read(id) {
       const m = await meta(id, 'id,name,modifiedTime,mimeType,size,parents');
       const text = await B.textAt(id, m.modifiedTime);
-      if (B.notUtf8 && B.notUtf8(id)) throw new Error(m.name + ' isn\u2019t saved as UTF-8 (Unicode), so LibLande didn\u2019t change it: its accented letters would have been garbled. In BibDesk, save it with the encoding Unicode (UTF-8) (File \u203a Save As\u2026), then try again.');
+      if (B.notUtf8 && B.notUtf8(id)) throw new Error(m.name + ' isn\u2019t saved as UTF-8 (Unicode), so Linden didn\u2019t change it: its accented letters would have been garbled. In BibDesk, save it with the encoding Unicode (UTF-8) (File \u203a Save As\u2026), then try again.');
       return { m, text };
     }
     // A copy in LibLande/Backups named with the time. Throws if the copy
@@ -447,7 +447,7 @@
       const folder = await subFolder(await B.dataFolder(), BACKUP_FOLDER, true);
       const base = m.name.replace(/\.bib$/i, '');
       const copy = await S.copy(m.id, folder.id, base + ' ' + (when || fileTime()) + '.bib', 'id,size');
-      if (!copy || String(copy.size) !== String(m.size)) throw new Error('LibLande couldn’t make a backup copy, so it didn’t save.');
+      if (!copy || String(copy.size) !== String(m.size)) throw new Error('Linden couldn’t make a backup copy, so it didn’t save.');
       return folder;
     }
     // Which copies of the file are kept: the newest KEEP_RECENT, then the
@@ -515,7 +515,7 @@
           } catch (e2) { known = false; }
           if (!made) {
             if (known) { if (out.undo) await out.undo(); throw e; }
-            const u = new Error('Google Drive didn\u2019t answer, so LibLande can\u2019t tell whether your change was saved. Tap Refresh in a moment to see.');
+            const u = new Error('Google Drive didn\u2019t answer, so Linden can\u2019t tell whether your change was saved. Tap Refresh in a moment to see.');
             u.unsure = true; u.offline = true;
             throw u;
           }
@@ -529,7 +529,7 @@
       }
       throw new Error(BUSY);
     }
-    // The same for LibLande's own JSON files (the reading
+    // The same for Linden's own JSON files (the reading
     // list): change(value) changes it in place, or returns false to leave it.
     async function changeJson(name, blank, change) {
       const folder = await B.dataFolder();
@@ -556,13 +556,13 @@
     /* -------------------------------------------- PDFs */
     // Move an uploaded PDF into the papers folder under the name AutoFile
     // would give it (as Code.gs's filePdf_). Returns {relPath, info, undo}.
-    // avoid: folders the .bib names that LibLande can't see (paths from
+    // avoid: folders the .bib names that Linden can't see (paths from
     // the .bib's folder; limited access), never made again.
     async function filePdf(bibMeta, uploadId, fields, prefix, avoid) {
       const segs = String(prefix || 'Papers').split('/').filter(Boolean);
-      if (segs.some(s => s === '..' || s === '.')) throw new Error('LibLande can only file PDFs in a folder inside the one that holds your .bib file.');
+      if (segs.some(s => s === '..' || s === '.')) throw new Error('Linden can only file PDFs in a folder inside the one that holds your .bib file.');
       let rootId = bibMeta.parents && bibMeta.parents[0];
-      if (!rootId) throw new Error('LibLande can’t see the folder that holds your .bib file.');
+      if (!rootId) throw new Error('Linden can’t see the folder that holds your .bib file.');
       for (const s of segs) rootId = (await subFolder(rootId, s, true)).id;
       const name = autoFileName_(fields);
       const blocked = (avoid || []).some(p => {
@@ -599,7 +599,7 @@
     // sometimes wrote "Ogmen.H" for a name with accents.)
     const folderKey = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9.-]/g, '').toLowerCase();
     // The author folder, reusing one whose name differs only in accents or
-    // punctuation. blocked: one with that name is there but LibLande can't
+    // punctuation. blocked: one with that name is there but Linden can't
     // see it (limited access, a folder BibDesk made later): not made a
     // second time; it says so, and which (e.unseenFolder).
     async function authorFolder(parentId, name, blocked) {
@@ -609,7 +609,7 @@
       const hit = (await S.children(parentId, { folders: true, fields: 'id,name' })).find(f => folderKey(f.name) === want);
       if (hit) return hit;
       if (blocked) {
-        const e = new Error('Your papers folder has a folder \u201c' + name + '\u201d that LibLande hasn\u2019t been given yet (BibDesk made it later). Add papers, choose that folder, then try again.');
+        const e = new Error('Your papers folder has a folder \u201c' + name + '\u201d that Linden hasn\u2019t been given yet (BibDesk made it later). Add papers, choose that folder, then try again.');
         e.unseenFolder = name;
         throw e;
       }
@@ -640,14 +640,14 @@
               c.resolve(res);
             };
             worker.onerror = ev => {
-              Object.keys(calls).forEach(k => { calls[k].reject(new Error(ev.message || 'LibLande couldn’t read the .bib file.')); delete calls[k]; });
+              Object.keys(calls).forEach(k => { calls[k].reject(new Error(ev.message || 'Linden couldn’t read the .bib file.')); delete calls[k]; });
               worker = null; lastSent = null;
             };
           }
           const id = ++seq, w = worker;
           return new Promise((resolve, reject) => {
             // (A worker that never answers, as one can when an iPad puts
-            // LibLande to sleep: given up, and the work done here instead.)
+            // Linden to sleep: given up, and the work done here instead.)
             const timer = setTimeout(() => {
               if (!calls[id]) return;
               delete calls[id];
@@ -688,7 +688,7 @@
     F.saveEntry = req => serial(async () => {
       req = Object.assign({}, req, { set: texSafe(Object.assign({}, req.set || {})) });
       const id = req.where === 'inbox' ? await inboxFile(false) : await mainBibId();
-      if (!id) throw new Error('LibLande couldn’t find the file to edit.');
+      if (!id) throw new Error('Linden couldn’t find the file to edit.');
       const out = await changeFile(id, async (text, m) => run('saveEntry', text, req, m.name, req.where !== 'inbox' ? Date.parse(m.modifiedTime) : null), req.backupName);
       if (!out.text) return { stamp: Date.parse(out.m.modifiedTime), unchanged: true, hash: out.hash, already: !!out.already };
       return { stamp: out.stamp, hash: out.hash, groupsHash: out.groupsHash };
@@ -749,11 +749,11 @@
     });
 
     /* -------------------------------------------- the Trash */
-    // What's deleted in LibLande (a publication, an Inbox item, a PDF
+    // What's deleted in Linden (a publication, an Inbox item, a PDF
     // replaced by Attach) is kept 45 days: its files moved to
     // LibLande/Trash, a note of it in LibLande/trash.json ({items: {id:
     // {id, kind, deletedAt, title, who, year, ...}}}), so it can be put
-    // back. After 45 days (looked at when LibLande opens), its files go to
+    // back. After 45 days (looked at when Linden opens), its files go to
     // Drive's own trash and the note goes.
     const TRASH_FILE = 'trash.json', TRASH_FOLDER = 'Trash', TRASH_DAYS = 45;
     const blankTrash = () => ({ v: 1, items: {} });
@@ -769,7 +769,7 @@
     async function fromTrash(file, to) {
       const tf = await trashFolder();
       const dest = to || file.from;
-      if (!dest) throw new Error('LibLande doesn\u2019t know where ' + file.n + ' was.');
+      if (!dest) throw new Error('Linden doesn\u2019t know where ' + file.n + ' was.');
       await S.move(file.id, dest, tf.id, file.n);
     }
     async function trashNote(item) {
@@ -1026,7 +1026,7 @@
       let name = base, n = 2;
       while (await B.named(S.root, name, 'id', true)) name = base + ' ' + n++;
       const folder = await S.mkdir(S.root, name);
-      const text = '%% This BibTeX bibliography file was created using LibLande.\n%% Created ' + new Date().toISOString().slice(0, 10) + '\n\n%% Saved with string encoding Unicode (UTF-8) \n\n';
+      const text = '%% This BibTeX bibliography file was created using Linden.\n%% Created ' + new Date().toISOString().slice(0, 10) + '\n\n%% Saved with string encoding Unicode (UTF-8) \n\n';
       const bib = await B.writeFile(folder.id, name + '.bib', text, 'text/plain');
       // (Its papers in a folder of their own, beside the .bib.)
       const papers = await subFolder(folder.id, 'Papers', true);
@@ -1125,7 +1125,7 @@
       if (!req.bibId || req.bibId === s.bibId) throw new Error('That\u2019s the library you have open.');
       const src = (await read(s.bibId)).text;
       const tbib = await meta(req.bibId, 'id,name,parents,trashed');
-      if (tbib.trashed || !(tbib.parents && tbib.parents[0])) throw new Error('LibLande can\u2019t open that library\u2019s .bib file.');
+      if (tbib.trashed || !(tbib.parents && tbib.parents[0])) throw new Error('Linden can\u2019t open that library\u2019s .bib file.');
       // (Where its PDFs go: its papers folder, if that's beside the .bib;
       // otherwise Papers there, as AutoFile would.)
       let prefix = 'Papers';

@@ -1,8 +1,8 @@
-﻿// LibLande: adding and editing, BibTeX pasted in, selecting several, updates, cite keys, versions, export, the keyboard.
+﻿// Linden: adding and editing, BibTeX pasted in, selecting several, updates, cite keys, versions, export, the keyboard.
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/editing.js'] = '2026-11-23.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/editing.js'] = '2026-11-24.01';
 /* ------------------------------------------------------------ add and edit */
 const TYPE_FIELDS = {
   article: ['journal', 'volume', 'number', 'pages'],
@@ -93,7 +93,7 @@ function balanced(v) {
   return depth === 0;
 }
 // (makeCiteKey, a new publication's cite key: titlesearch.js, shared with
-// LibLande for Word.)
+// Linden for Word.)
 
 function formFieldNames(type, present) {
   const list = ['title', 'author', 'year'].concat(ORIG_TYPES.has(type) || present('origdate') ? ['origdate'] : [], TYPE_FIELDS[type] || TYPE_FIELDS.misc, ['doi', 'url']);
@@ -440,7 +440,7 @@ function openAdd(pdf, inbox) {
   $('#addPdf').addEventListener('change', ev => { const f = ev.target.files[0]; if (f && sheet && f !== sheet.pdf) setAddPdf(f); });
   if (pdf) setAddPdf(pdf);
 }
-// Adding from a paper's web page: a link to LibLande ending
+// Adding from a paper's web page: a link to Linden ending
 // "#add=<DOI, arXiv ID, ISBN, or 'title: ... author: ...'>&from=<the page>",
 // as the bookmark and the Safari extension (Settings > Adding from the web)
 // open, opens Add filled in: from Crossref (as a DOI typed would be), or
@@ -459,7 +459,7 @@ function addLinkTake() {
 addLinkTake();
 window.addEventListener('hashchange', () => { addLinkTake(); openLinkTake(); if (ENTRIES && ENTRIES.length) { addFromLink(); openFromLink(); } });
 // Opening one publication from a link: "#open=<cite key>", with
-// "&view=notes" for its Notes or "&view=edit" for Edit (as LibLande for
+// "&view=notes" for its Notes or "&view=edit" for Edit (as Linden for
 // Word opens it). Kept for the session until the library's open, as
 // #add is.
 const OPEN_LINK_KEY = 'landelib.openLink';
@@ -502,7 +502,7 @@ async function addFromLink() {
   let p = null;
   try { p = JSON.parse(sessionStorage.getItem(ADD_LINK_KEY) || 'null'); sessionStorage.removeItem(ADD_LINK_KEY); } catch (err) { p = null; }
   if (!p || !p.q) return;
-  if (!gs || $('#addBtn').hidden) { toast('Sign in to LibLande to add \u201c' + p.q.replace(/^title:\s*/, '').replace(/\s+author:.*$/, '') + '\u201d.', 8000); return; }
+  if (!gs || $('#addBtn').hidden) { toast('Sign in to Linden to add \u201c' + p.q.replace(/^title:\s*/, '').replace(/\s+author:.*$/, '') + '\u201d.', 8000); return; }
   if (sheet) closeSheet();
   openAdd();
   let host = '';
@@ -519,7 +519,7 @@ async function addFromLink() {
 }
 // Settings > Adding from the web: the bookmark (dragged to the bar, or its
 // code copied), and the description for Safari's Describe Extension, both
-// opening this LibLande's address.
+// opening this Linden's address.
 function webAddBase() { return location.origin + location.pathname; }
 function webAddBookmark() {
   const js = "(function(){var m=function(n){var e=document.querySelector('meta[name=\"'+n+'\" i]');return e?e.content:''};" +
@@ -531,7 +531,7 @@ function webAddBookmark() {
   return 'javascript:' + encodeURIComponent(js);
 }
 function webAddDescription() {
-  return 'Add a toolbar button called "Add to LibLande". When clicked, read the current page\u2019s citation details from its meta tags: ' +
+  return 'Add a toolbar button called "Add to Linden". When clicked, read the current page\u2019s citation details from its meta tags: ' +
     'the DOI (citation_doi, dc.identifier, prism.doi, or failing those the first doi.org link on the page), the arXiv ID (citation_arxiv_id), ' +
     'the title (citation_title) and the first author (the first citation_author). Then open a new tab at ' + webAddBase() + '#add= followed by, URL-encoded: ' +
     'the DOI if there is one; otherwise "arXiv:" and the arXiv ID; otherwise "title: " and the title, then " author: " and the first author\u2019s surname. ' +
@@ -542,7 +542,7 @@ if ($('#webBm')) {
   $('#webBm').addEventListener('click', ev => { ev.preventDefault(); toast('Drag it to your bookmarks bar.', 4000); });
   const copy = (text, what) => navigator.clipboard.writeText(text).then(() => toast(what, 6000), () => toast('Couldn\u2019t copy it.', 4000));
   $('#webExtCopy').addEventListener('click', () => copy(webAddDescription(), 'Copied. In Safari, open the address bar\u2019s menu, choose Describe Extension, and paste it in.'));
-  $('#webBmCopy').addEventListener('click', () => copy(decodeURIComponent(webAddBookmark()), 'Copied. Bookmark any page, name it \u201cAdd to LibLande\u201d, then edit it and paste this in place of its address.'));
+  $('#webBmCopy').addEventListener('click', () => copy(decodeURIComponent(webAddBookmark()), 'Copied. Bookmark any page, name it \u201cAdd to Linden\u201d, then edit it and paste this in place of its address.'));
 }
 function renderAddFields(values) {
   const type = $('#addType').value;
@@ -619,7 +619,7 @@ function parseBibtexEntry(s) {
   }
   return { type: m[1].toLowerCase(), key, fields, more: /@\s*[A-Za-z]+\s*[{(]/.test(s.slice(i)) };
 }
-// Fields of BibDesk's own, and the dates, which LibLande sets itself.
+// Fields of BibDesk's own, and the dates, which Linden sets itself.
 const BIB_OWN = n => /^bdsk-/.test(n) || ['file', 'local-url', 'date-added', 'date-modified'].indexOf(n) >= 0;
 function fillFromBibtex(text) {
   const p = parseBibtexEntry(text);
@@ -671,8 +671,8 @@ async function pasteIntoForm(read) {
   try { t = await (read || navigator.clipboard.readText()); } catch (err) {
     const box = $('#doiLookup');
     box.focus(); box.select();
-    sheetMsg(coarseMQ.matches ? 'The browser didn\u2019t let LibLande read what you copied. Touch and hold the box, then choose Paste.'
-      : 'The browser didn\u2019t let LibLande read what you copied. Press \u2318V to paste it into the box.');
+    sheetMsg(coarseMQ.matches ? 'The browser didn\u2019t let Linden read what you copied. Touch and hold the box, then choose Paste.'
+      : 'The browser didn\u2019t let Linden read what you copied. Press \u2318V to paste it into the box.');
     return;
   }
   if (!t.trim()) { sheetMsg('Nothing has been copied. Copy a DOI or a BibTeX entry first.', true); return; }
@@ -743,9 +743,9 @@ async function uploadPdf(file, name, info, again) {
 }
 
 // After a save: the library rebuilt from the .bib (for your other devices,
-// and the next time LibLande opens), once the edits pause. Each change is
+// and the next time Linden opens), once the edits pause. Each change is
 // already shown here, and a rebuild reads the whole .bib, so one rebuild
-// for a run of edits, not one each. (Sooner if you leave LibLande or tap
+// for a run of edits, not one each. (Sooner if you leave Linden or tap
 // Refresh; if it never happens, the next start or refresh builds.)
 const REBUILD = { timer: 0, wait: 45 * 1000 };
 function afterWrite() {
@@ -1058,7 +1058,7 @@ async function saveAdd() {
     // (A book: its chapters already in the library, offered to link.)
     if (isBook(e)) setTimeout(() => lcOfferFor(e), 1200);
   } catch (err) {
-    // (A folder LibLande isn't given yet: Add papers first.)
+    // (A folder Linden isn't given yet: Add papers first.)
     toast('Couldn\u2019t add ' + name + ': ' + errText(err), 12000, (err && err.unseenFolder ? [{ label: 'Add papers', run: addPapers }] : []).concat([{ label: 'Try again', run: () => reopenAdd(snap, errText(err)) }]));
   }
 }
@@ -1646,7 +1646,7 @@ async function saveBulk() {
     afterWrite();
     closeSheet();
     const skipped = res.skipped || [];
-    toast('Changed ' + done + ' publication' + (done === 1 ? '' : 's') + (skipped.length ? '; ' + skipped.length + ' left as they were (changed elsewhere since LibLande read them)' : ''), skipped.length ? 7000 : 4000);
+    toast('Changed ' + done + ' publication' + (done === 1 ? '' : 's') + (skipped.length ? '; ' + skipped.length + ' left as they were (changed elsewhere since Linden read them)' : ''), skipped.length ? 7000 : 4000);
   } catch (err) {
     if (sheet === s) sheetMsg(errText(err), true);
   } finally {
@@ -1844,7 +1844,7 @@ async function saveForth() {
       closeSheet();
       const skipped = res.skipped || [];
       toast('Updated ' + done + ' publication' + (done === 1 ? '' : 's') +
-        (skipped.length ? '; ' + skipped.length + ' left as they were (changed elsewhere since LibLande read them)' : ''), skipped.length ? 7000 : 4000);
+        (skipped.length ? '; ' + skipped.length + ' left as they were (changed elsewhere since Linden read them)' : ''), skipped.length ? 7000 : 4000);
       return;
     }
     for (const x of todo) {
@@ -2017,7 +2017,7 @@ async function joinUnder(main, others, progress) {
   let n = 0;
   for (const x of others) {
     if (progress) progress(++n, others.length);
-    // (In versionof; an older untyped "related" of LibLande's moves there.)
+    // (In versionof; an older untyped "related" of Linden's moves there.)
     const was = { versionof: rawOf(x, 'versionof').trim(), related: rawOf(x, 'related').trim() };
     before.push([x, was]);
     const keep = relatedKeys(x).filter(k => k !== main.k && k !== VERSION_OF.get(x.k));
@@ -2172,7 +2172,7 @@ async function addToGroup(keys, name) {
     init(DATA, true);
     afterWrite();
     const skipped = (res.skipped || []).length;
-    toast(done ? 'Put ' + what(done) + ' in ' + name + (skipped ? '; ' + skipped + ' left out (changed elsewhere since LibLande read them)' : '') : 'Nothing put in ' + name, 5000);
+    toast(done ? 'Put ' + what(done) + ' in ' + name + (skipped ? '; ' + skipped + ' left out (changed elsewhere since Linden read them)' : '') : 'Nothing put in ' + name, 5000);
   } catch (err) { toast('Couldn\u2019t put ' + (list.length === 1 ? 'it' : 'them') + ' in ' + name + ': ' + errText(err), 7000); }
 }
 // With a finger (an iPad): hold a publication, then drag it onto another
@@ -2309,7 +2309,7 @@ rowsEl.addEventListener('drop', ev => {
 /* ------------------------------------------------------------ export */
 function exportDefaultName() {
   const d = new Date();
-  return 'LibLande export ' + d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  return 'Linden export ' + d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
 }
 // The choices as tiles: an icon, a name, and a line under it.
 const EXP_ICON = {
@@ -2378,7 +2378,7 @@ async function runExport() {
   if (mode !== 'none') {
     list.forEach(e => (e.files || []).filter(f => f.id).forEach((f, j) => pdfs.push({ e, f, name: e.k + (j ? '-' + (j + 1) : '') + '.pdf' })));
   }
-  const bib = '% Exported from LibLande on ' + bibdeskTime() + ': ' + list.length + ' publication' + (list.length === 1 ? '' : 's') + '\n\n' +
+  const bib = '% Exported from Linden on ' + bibdeskTime() + ': ' + list.length + ' publication' + (list.length === 1 ? '' : 's') + '\n\n' +
     list.map(e => {
       const own = pdfs.filter(p => p.e === e).map(p => ':' + p.name + ':PDF');
       return bibtex(e, own.length ? { file: own.join(';') } : null);
@@ -2613,7 +2613,7 @@ function copyAs(kind) {
 
 /* ---- a QR code of references */
 // For one publication or several (a selection, as a group's): a QR code
-// that, scanned with a phone, opens a page on LibLande's site showing
+// that, scanned with a phone, opens a page on Linden's site showing
 // them, APA, with Copy and their DOIs. The references are in the link
 // itself (deflated, in base64url): nothing is uploaded or kept anywhere.
 // A QR code holds about 2,900 characters: some 10 to 15 references.
@@ -2632,8 +2632,8 @@ function loadQrLib() {
   }
   return qrReady;
 }
-// (The page: on LibLande's own site, as this copy is, or the public one.)
-const qrPage = () => /\.github\.io$/.test(location.hostname) ? new URL('cite.html', location.href).href.split('#')[0] : 'https:\/\/kevinlande.github.io/liblande/cite.html';
+// (The page: on Linden's own site, as this copy is, or the public one.)
+const qrPage = () => /\.github\.io$/.test(location.hostname) ? new URL('cite.html', location.href).href.split('#')[0] : 'https:\/\/kevinlande.github.io/linden/cite.html';
 async function qrLink(list) {
   const refs = citeList(list).map(r => {
     const e = r.e, doi = String(e.f.doi || '').trim().replace(/^https?:\/\/(dx\.)?doi\.org\//i, '');

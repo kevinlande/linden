@@ -1,8 +1,8 @@
-﻿// LibLande: the Trash: what's deleted in LibLande (publications, Inbox items, replaced PDFs), kept 45 days to put back.
+﻿// Linden: the Trash: what's deleted in Linden (publications, Inbox items, replaced PDFs), kept 45 days to put back.
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/trash.js'] = '2026-11-23.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/trash.js'] = '2026-11-24.01';
 /* ------------------------------------------------------------ the Trash */
 // Kept in Drive (LibLande/trash.json, the files in LibLande/Trash: see
 // pages/edits.js), the same on every device. A publication moved to the
@@ -57,7 +57,7 @@ function trDetailHTML(e) {
     ((x.who || x.year) ? `<p class="ib-people">${esc([x.who, x.year].filter(Boolean).join(' \u00b7 '))}</p>` : '') +
     `<div class="ib-from tr-when">${ICON.trash}<span>Deleted ${esc(when)}${x.dev ? ', on your ' + esc(x.dev) : ''}.` +
     (kept.length ? ` Kept with it: ${esc(kept.join(', '))}.` : '') + `</span></div>` +
-    `<p class="tr-left${left <= 3 ? ' soon' : ''}">Deleted for good ${left ? 'in ' + left + ' day' + (left === 1 ? '' : 's') : 'when LibLande next opens'}.</p>` +
+    `<p class="tr-left${left <= 3 ? ' soon' : ''}">Deleted for good ${left ? 'in ' + left + ' day' + (left === 1 ? '' : 's') : 'when Linden next opens'}.</p>` +
     `</div><div class="ib-side"><button type="button" class="btn primary" data-tr="restore">${UNDO_ICON}<span>Restore</span></button>` +
     `<p class="ib-state">${back}</p><button type="button" class="btn quiet danger" data-tr="delete">${ICON.trash}<span>Delete now\u2026</span></button>` +
     `<button type="button" class="btn quiet danger" data-tr="empty">Empty Trash\u2026</button></div></div>`;
@@ -184,8 +184,8 @@ function trAsk(what, ids) {
   if (!ids.length || sheet) return;
   const one = ids.length === 1 && TRASH.items[ids[0]];
   showSheet(what === 'empty'
-    ? `<h2>Empty the Trash?</h2><p class="sheet-note">${ids.length === 1 ? 'The one thing' : 'All ' + ids.length + ' things'} in it ${ids.length === 1 ? 'is' : 'are'} deleted for good. LibLande can\u2019t undo this (its files go to Google Drive\u2019s trash, for 30 days).</p>`
-    : `<h2>Delete for good?</h2><p class="sheet-note"><b>${esc(shortTitle(one ? one.title || '' : ''))}</b> is deleted for good. LibLande can\u2019t undo this (its files go to Google Drive\u2019s trash, for 30 days).</p>`, what === 'empty' ? 'Empty Trash' : 'Delete');
+    ? `<h2>Empty the Trash?</h2><p class="sheet-note">${ids.length === 1 ? 'The one thing' : 'All ' + ids.length + ' things'} in it ${ids.length === 1 ? 'is' : 'are'} deleted for good. Linden can\u2019t undo this (its files go to Google Drive\u2019s trash, for 30 days).</p>`
+    : `<h2>Delete for good?</h2><p class="sheet-note"><b>${esc(shortTitle(one ? one.title || '' : ''))}</b> is deleted for good. Linden can\u2019t undo this (its files go to Google Drive\u2019s trash, for 30 days).</p>`, what === 'empty' ? 'Empty Trash' : 'Delete');
   sheet = { mode: 'trashdel', ids, all: what === 'empty' };
   $('#sheetSave').classList.add('danger');
 }

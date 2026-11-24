@@ -1,8 +1,8 @@
-﻿// LibLande: the PDF reader: pages, marks, tools, saving, the sidebar.
+﻿// Linden: the PDF reader: pages, marks, tools, saving, the sidebar.
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/reader.js'] = '2026-11-23.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/reader.js'] = '2026-11-24.01';
 /* ------------------------------------------------------------ PDF reader */
 // The reader downloads a paper straight from Google Drive and shows it with
 // PDF.js 5 (the viewer inside Firefox), which draws highlights, pen marks and
@@ -65,7 +65,7 @@ addStreamIteration();
 //   (evaluating 'DrawingEditor.#sl.isCancellable')": a stroke that's gone
 //   is skipped.
 // - PDF.js hears a stroke's end (the lift) on the window, last, and on the
-//   page's layer: one of LibLande's own handlers that stops the lift (a
+//   page's layer: one of Linden's own handlers that stops the lift (a
 //   drawing moved with a long press, say) left the stroke "under way". The
 //   layer then ignored the next stroke; PDF.js refused strokes of the other
 //   kind (it took the Pencil for a palm); and a pen stroke after a freehand
@@ -244,14 +244,14 @@ let tokenCache = null;
 // and of the publications added most recently (in the inbox too), are
 // downloaded ahead, once each, so they open with no
 // connection too (sw.js keeps them, with the papers you've opened). A
-// little after LibLande opens, and again whenever it comes back to the
+// little after Linden opens, and again whenever it comes back to the
 // screen or online, or the library or reading list changes: an app kept on the home
 // screen is mostly resumed, not opened afresh, and a run stops when
-// LibLande goes to the background. Only with a token already in hand
+// Linden goes to the background. Only with a token already in hand
 // (never asking you to sign in for it), and one paper at a time.
 // (At most AHEAD_MOST in all, Up next first: well within the 60 papers
 // sw.js keeps, so ones fetched ahead aren't pushed out by papers opened
-// and fetched again each time LibLande comes back.)
+// and fetched again each time Linden comes back.)
 const AHEAD = 10, AHEAD_MOST = 30;
 let aheadRun = null, aheadTimer = 0;
 function fetchAheadSoon(ms) { clearTimeout(aheadTimer); aheadTimer = setTimeout(fetchAhead, ms == null ? 3000 : ms); }
@@ -502,7 +502,7 @@ function vStatus(msg, isError, actions, detail) {
 }
 
 // fetch, given up after ms with no answer, its (small) reply read within
-// the same time (an iPad can leave a request under way when LibLande goes
+// the same time (an iPad can leave a request under way when Linden goes
 // to the background with none, ever, and every later save would wait
 // behind it). Given up, it fails as a lost connection does, so a save
 // keeps the changes on this device; err.noAnswer says so.
@@ -908,7 +908,7 @@ async function openReader(entry, file, pos) {
         autoChanged();
       });
       toast(oldLines + (oldLines === 1 ? ' underline or strike-through' : ' underlines and strike-throughs') +
-        ' drawn as pen strokes by an earlier LibLande ' + (oldLines === 1 ? 'is' : 'are') + ' now real, as other apps show them. Saved with the paper.', 7000);
+        ' drawn as pen strokes by an earlier Linden ' + (oldLines === 1 ? 'is' : 'are') + ' now real, as other apps show them. Saved with the paper.', 7000);
     }
     if (clash) {
       vStatus('Marks you made on this device (' + new Date(clash.at).toLocaleString() + ') never reached Google Drive, and the PDF there has changed since.', false,
@@ -1951,7 +1951,7 @@ $('#vpPanel').addEventListener('click', ev => {
   saveToolPrefs();
 });
 // The tools' colours, sizes and kinds are kept on this device and with your
-// Google account (so they survive LibLande being updated).
+// Google account (so they survive Linden being updated).
 const TOOL_PREFS = ['penColor', 'penSize', 'hlColor', 'hlMode', 'lineKind', 'lineColor', 'textColor', 'textSize', 'eraserMode', 'eraserSize'];
 let toolPrefsTimer = 0;
 function saveToolPrefs() {
@@ -2010,7 +2010,7 @@ function showPalette() {
 }
 // Where the toolbar is kept is saved with your Google account too (one
 // place for iPad, one for iPhone, one for a computer), so it's where you
-// left it after LibLande is updated and in any browser on that device.
+// left it after Linden is updated and in any browser on that device.
 const deviceKind = () => /iPhone|iPod/.test(navigator.userAgent) ? 'iphone'
   : /iPad/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ? 'ipad' : 'desktop';
 function savePalettePlace() {
@@ -2250,7 +2250,7 @@ function snapDrag(ev, h, box, isShow) {
 });
 window.addEventListener('resize', () => { if (!$('#viewer').hidden) placePalette(); });
 
-// Apple Pencil: once LibLande sees the Pencil, fingers scroll and zoom
+// Apple Pencil: once Linden sees the Pencil, fingers scroll and zoom
 // while a tool is on, and the Pencil draws (the Pencil's squeeze and
 // double-tap aren't available to web pages). A tool is only ever on when
 // you choose it. The device remembers it has a Pencil (with your account
@@ -2276,7 +2276,7 @@ function endStrokes() {
   // (In page terms, so scrolling doesn't move it.)
   const at = ev => [ev.clientX + sc.scrollLeft, ev.clientY + sc.scrollTop];
   const drawing = ev => V.tool === 'pen' && ev.button <= 0 && !(ev.pointerType === 'touch' && V.pencil) && !(ev.target.closest && ev.target.closest('.editToolbar, .note-pin'));
-  // Before PDF.js (or LibLande, for a press on a drawing) starts the stroke.
+  // Before PDF.js (or Linden, for a press on a drawing) starts the stroke.
   sc.addEventListener('pointerdown', ev => {
     if (!drawing(ev)) return;
     clearTimeout(STROKES.timer);
@@ -2557,7 +2557,7 @@ function textRects(r) {
 }
 const hexRgb = hex => { const h = String(hex).replace('#', ''); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16) || 0); };
 // Put a mark on a page (or back on it) without PDF.js recording that as a
-// step for Undo of its own: LibLande records the whole change as one step.
+// step for Undo of its own: Linden records the whole change as one step.
 function putMark(layer, ed, rebuild) {
   const own = Object.prototype.hasOwnProperty.call(layer, 'addUndoableEditor');
   layer.addUndoableEditor = () => {};
@@ -2577,13 +2577,13 @@ async function addMark(page, data) {
 }
 /* ---- underlines and strike-throughs */
 // PDF.js can make highlights, drawings, text and pictures, but not the
-// PDF Underline and StrikeOut marks other readers make. So LibLande makes
+// PDF Underline and StrikeOut marks other readers make. So Linden makes
 // them as highlights of the words (they select, recolour, erase and take
 // comments as highlights do) with a fill too faint to see, whose opacity
 // says which they are, and draws the line over them itself (drawLines).
 // Every save to Google Drive turns them into real Underline and StrikeOut
 // marks (realLines), which any reader shows; on this device, until then,
-// they stay as they are. Real ones already in a PDF become LibLande's when
+// they stay as they are. Real ones already in a PDF become Linden's when
 // picked up (takeOverLine), and PDF.js removes the original at the save.
 // (PDF.js writes opacity to two decimal places.)
 const LINE_OPACITY = { underline: 0.01, strike: 0.02 };
@@ -2631,7 +2631,7 @@ function decorateLine(ed) {
 // see, NOTE_OPACITY saying what it is, and a speech bubble drawn over it;
 // it takes its comment as any mark does. Every save turns it into a real
 // Text note (realLines); a Text note in the PDF, from any app, becomes
-// LibLande's when tapped (takeOverNote).
+// Linden's when tapped (takeOverNote).
 const NOTE_PT = 16;
 // (NOTE_OPACITY and isNoteOpacity: moved to marks.js.)
 const NOTE_KIND = new WeakMap();
@@ -2665,7 +2665,7 @@ async function noteMark(page, x, y) {
   if (ed) { NOTE_KIND.set(ed, true); decorateLines(); }
   return ed;
 }
-// A Text note in the PDF made LibLande's, in its place, with its comment.
+// A Text note in the PDF made Linden's, in its place, with its comment.
 async function takeOverNote(page, id) {
   if (!V.doc || !V.ui) return null;
   const idx = +page.dataset.pageNumber - 1, layer = V.ui.getLayer(idx);
@@ -2761,7 +2761,7 @@ async function sectionLines(pageNumber) {
     if (kind && a.quadPoints) drawLines(sec, a.rect, Array.from(a.quadPoints), rgbHex(a.color), kind);
   }
 }
-// A real Underline or StrikeOut from the PDF, picked up: LibLande's own in
+// A real Underline or StrikeOut from the PDF, picked up: Linden's own in
 // its place (same words, colour and comment), standing for the original
 // as PDF.js's edited marks do (annotationElementId): PDF.js leaves the
 // original out of the page it draws, writes this one in its place when
@@ -2874,7 +2874,7 @@ function makeLineMark(ctx, N, d, kind, q, c, rect) {
   d.set(N('AP'), ctx.obj({ N: ap }));
 }
 
-// Underlines and strike-throughs LibLande drew on 1 October 2026 (versions
+// Underlines and strike-throughs Linden drew on 1 October 2026 (versions
 // .10 and .11, before it made real ones) were pen strokes: one straight,
 // level, thin stroke per line of text, a little under the text or through
 // its middle. Found when a paper opens (only one with pen strokes is
@@ -2904,7 +2904,7 @@ async function oldLineMarks(doc) {
     return Array.from(list).map(p => [p.x, p.y]);
   };
   // (Each stroke exactly two points at the same height: no hand draws
-  // that. 0.8 to 2 points thick, as LibLande made them.)
+  // that. 0.8 to 2 points thick, as Linden made them.)
   const level = a => {
     const w = a.borderStyle ? a.borderStyle.width : 1;
     return a.subtype === 'Ink' && a.inkLists && a.inkLists.length && w >= 0.79 && w <= 2.01 &&
@@ -2931,7 +2931,7 @@ async function oldLineMarks(doc) {
           const k = (y - line.b) / line.h < 0.12 ? 'underline' : 'strike';
           if (kind && k !== kind) { ok = false; break; }
           kind = k;
-          // (A box for the line of text that puts LibLande's line where the stroke was.)
+          // (A box for the line of text that puts Linden's line where the stroke was.)
           const H = line.h * 1.2, yb = y - (k === 'underline' ? 0.08 : 0.42) * H;
           quads.push(xl, yb + H, xr, yb + H, xl, yb, xr, yb);
         }
@@ -2973,7 +2973,7 @@ async function convertOldLines(bytes, found) {
 // Papers already looked at (file ID and checksum): not looked at again.
 const OLD_LINES_SEEN = new Set(store.get('oldLinesSeen', []));
 
-// For Google Drive (and sharing): LibLande's underlines and strike-throughs
+// For Google Drive (and sharing): Linden's underlines and strike-throughs
 // as real Underline and StrikeOut marks, each with an appearance any PDF
 // reader can draw. A file without any comes back as it was.
 async function realLines(bytes) {
@@ -3004,14 +3004,14 @@ async function realLines(bytes) {
 
 // The comment box, for PDF.js's comment button on a selected mark too.
 // (PDF.js 5 calls open; PDF.js 6 calls showDialog, and the rest of its
-// comment interface, whose popups and sidebar LibLande doesn't use: its
+// comment interface, whose popups and sidebar Linden doesn't use: its
 // own pins show comments.)
 const commentManager = {
   open(ui, editor) { openComment(editor, false); },
   showDialog(ui, editor) { if (editor) openComment(editor, false); },
   setSidebarUiManager() {}, updateComment() {}, updatePopupColor() {}, removeComments() {},
   toggleCommentPopup() {}, makeCommentColor() { return null; }, destroyPopup() {},
-  // (What a mark's comment button opens: LibLande's comment box.)
+  // (What a mark's comment button opens: Linden's comment box.)
   get dialogElement() { return document.getElementById('vComment'); },
   destroy() {}, showSidebar() {}, hideSidebar() {},
 };
@@ -3542,7 +3542,7 @@ function blankOfText(t) {
 // highlighter highlighting text), takes a drag on the page off the words
 // for a new freehand highlight: only the freehand highlighter, chosen,
 // and used with the Pencil (or a finger, if it's the finger's tool),
-// draws one. Otherwise the press goes no further than LibLande's own
+// draws one. Otherwise the press goes no further than Linden's own
 // handling (selecting text, scrolling, picking up a mark); presses on a
 // mark or its toolbar still reach it, and with the text highlighter, on
 // the words.
@@ -3608,7 +3608,7 @@ $('#vScroll').addEventListener('pointerdown', ev => {
         if (inBox(b)) hits.push(ed);
       }
       // Underlines and strike-throughs saved in the PDF aren't marks PDF.js
-      // can edit: each gets LibLande's in its place (as a tap does), and
+      // can edit: each gets Linden's in its place (as a tap does), and
       // that one counts.
       page.querySelectorAll('.annotationLayer section.underlineAnnotation, .annotationLayer section.strikeoutAnnotation').forEach(sec => {
         const id = sec.dataset.annotationId;
@@ -3838,7 +3838,7 @@ async function pickUpMark(hit, x, y, back, bar) {
   // didn't choose one.)
   if (V.fromRead === 'read') document.querySelectorAll('#vPalette [data-tool]').forEach(b => b.setAttribute('aria-pressed', 'false'));
   const idx = +hit.page.dataset.pageNumber - 1;
-  // A real underline or strike-through from the PDF: LibLande's in its place.
+  // A real underline or strike-through from the PDF: Linden's in its place.
   const sec = hit.id && hit.page.querySelector(`.annotationLayer [data-annotation-id="${CSS.escape(hit.id)}"]`);
   if (sec && (sec.classList.contains('underlineAnnotation') || sec.classList.contains('strikeoutAnnotation'))) {
     await switched;
@@ -3968,7 +3968,7 @@ $('#vPages').addEventListener('pointerdown', ev => { if (ev.target.closest('.not
 // colour as continuous bars, one per line (the browser's own selection is
 // hidden, since it's drawn piece by piece, and in its own blue on iPad).
 // The bars follow the selection at most once a frame. With the Pencil,
-// which iPadOS doesn't let select web text, LibLande makes the selection
+// which iPadOS doesn't let select web text, Linden makes the selection
 // itself; either way PDF.js turns it into the highlight on release.
 (() => {
   const sc = $('#vScroll'), preview = $('#hlPreview');
@@ -4137,7 +4137,7 @@ $('#vPages').addEventListener('pointerdown', ev => { if (ev.target.closest('.not
     replaceWith(page, m, hits, hits[0].color, e && e.opacity).catch(err => console.warn(err));
     return true;
   };
-  // A new highlight over a range, one per page it crosses (LibLande makes
+  // A new highlight over a range, one per page it crosses (Linden makes
   // it, rather than leaving a selection for PDF.js to highlight).
   const makeNew = r => {
     for (const page of document.querySelectorAll('#vPages .page')) {
@@ -4294,7 +4294,7 @@ document.addEventListener('selectstart', ev => {
   if (lastPointer === 'touch' && !V.pencil && V.tool !== 'read' && !$('#viewer').hidden && el && el.closest && el.closest('#vScroll')) ev.preventDefault();
 }, true);
 // With a tool on, PDF.js turns any text selection into a highlight -- one
-// a finger's press makes on the iPad, say. LibLande makes highlights itself
+// a finger's press makes on the iPad, say. Linden makes highlights itself
 // (above), so PDF.js doesn't hear of selections then.
 document.addEventListener('selectionchange', ev => {
   if (V.ui && V.tool !== 'read' && !$('#viewer').hidden) ev.stopImmediatePropagation();
@@ -5819,7 +5819,7 @@ function marksSummary(withRef) {
 // weighing my highlights and notes. With the paper's APA citation, its
 // text page by page (by the page numbers printed in it, where the PDF
 // gives them), and then the highlights and notes with their pages. Nothing
-// is sent anywhere by LibLande: it's copied, for you to paste. (A scan
+// is sent anywhere by Linden: it's copied, for you to paste. (A scan
 // without text says so; a very long PDF is cut short, and says where.)
 const AI_MAX = 600000;
 const AI_BTN = `<button type="button" data-ai-copy aria-label="Copy for AI" title="Copy a prompt for Claude: this paper, with your highlights">${ICON.ai}<span>For AI</span></button>`;
@@ -5966,7 +5966,7 @@ async function showOutline() {
   // None: ways to make one.
   body.innerHTML = `<p class="v-side-note">${o.none || 'No outline, and no Contents page in the first pages.'}</p>` +
     `<div class="v-ol-make"><span>Make one:</span>` +
-    `<button type="button" class="btn" data-ol-make="toc" title="The Contents page you\u2019re on, or else the one LibLande finds">From the Contents</button>` +
+    `<button type="button" class="btn" data-ol-make="toc" title="The Contents page you\u2019re on, or else the one Linden finds">From the Contents</button>` +
     `<button type="button" class="btn" data-ol-make="heads" title="Lines in larger type than the text">From the headings</button>` +
     `<button type="button" class="btn" data-ol-make="empty" title="Add entries yourself, page by page">Empty, to fill in</button></div>`;
 }

@@ -1,12 +1,12 @@
-﻿// LibLande: Find a PDF: a publication's free copy, or the article through your library's proxy, opened in a new tab.
+﻿// Linden: Find a PDF: a publication's free copy, or the article through your library's proxy, opened in a new tab.
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/findpdf.js'] = '2026-11-23.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/findpdf.js'] = '2026-11-24.01';
 /* ------------------------------------------------------------ find a PDF */
 // For a publication: its free copy, found through OpenAlex (which carries
 // Unpaywall's open-access data, and needs no email), or the article
-// through a library proxy (as EZproxy), opened in a new tab. LibLande can't
+// through a library proxy (as EZproxy), opened in a new tab. Linden can't
 // fetch either itself (sites don't let a web page read their PDFs, and the
 // proxy needs your library sign-in, in your browser): you save the PDF and
 // drop it on the publication (or Attach it). See docs/pdf-helper.md for a

@@ -1,22 +1,22 @@
-// LibLande for Word: the side panel. Search your library, choose works,
+// Linden for Word: the side panel. Search your library, choose works,
 // insert a citation at the cursor, or change one the cursor is in; the
 // References list kept up to date; citations typed by hand, or Zotero's,
-// made LibLande's; a plain copy. Citations are Word content controls tagged
+// made Linden's; a plain copy. Citations are Word content controls tagged
 // "LL:<id>", their works kept in the document's add-in settings
 // ("liblande": {cites: {id: citation}, style}); the References list is the
 // one tagged "LL:refs". Their text comes from engine.js (APA) or citeproc-js
 // (another style), for the whole document at once.
-// The same panel is LibLande for Google Docs: opened with "?host=gdocs" in
+// The same panel is Linden for Google Docs: opened with "?host=gdocs" in
 // the add-on's sidebar (gdocs/addon), which passes its calls on to Apps
 // Script; there citations are named ranges (D, docsDoc).
 'use strict';
 (() => {
   const CLIENT_ID = '789682218462-98mjugngb46ttd01ucp9dcj71ufspjgn.apps.googleusercontent.com';
-  // Full or limited access to Drive, as in LibLande (docs/drive-file-plan.md):
+  // Full or limited access to Drive, as in Linden (docs/drive-file-plan.md):
   // chosen at the first sign-in here, as it was there.
   const SCOPES = { full: 'https://www.googleapis.com/auth/drive', limited: 'https://www.googleapis.com/auth/drive.file' };
   const API = 'https://www.googleapis.com/drive/v3/';
-  const LIBLANDE = 'https://kevinlande.github.io/liblande/';
+  const LIBLANDE = 'https://kevinlande.github.io/linden/';
   const $ = id => document.getElementById(id);
   // Word, or Google Docs (in the add-on's sidebar).
   const HOST = /[?&]host=gdocs\b/.test(location.search) ? 'gdocs' : 'word';
@@ -114,12 +114,12 @@
 
   /* ---- the library: library.json.gz in My Drive's LibLande folder */
   async function findLibrary() {
-    const folders = (await (await drive('files?q=' + encodeURIComponent("name = 'LibLande' and 'root' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false") + '&fields=files(id)')).json()).files || [];   // keep-name: the folder in Drive
+    const folders = (await (await drive('files?q=' + encodeURIComponent("(name = 'Linden' or name = 'LibLande') and 'root' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false") + '&fields=files(id)')).json()).files || [];   // keep-name: the folder in Drive
     for (const f of folders) {
       const lib = ((await (await drive('files?q=' + encodeURIComponent("name = 'library.json.gz' and " + q(f.id) + ' in parents and trashed = false') + '&fields=files(id,modifiedTime)')).json()).files || [])[0];
       if (lib) return lib;
     }
-    throw new Error('No LibLande library in your Google Drive (My Drive \u203a LibLande).');
+    throw new Error('No Linden library in your Google Drive (My Drive \u203a LibLande).');
   }
   const gunzip = async buf => JSON.parse(await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).text());
   async function fetchLibrary(force) {
@@ -162,7 +162,7 @@
 
   /* ---- the document's style: APA (engine.js), or a CSL style (citeproc-js) */
   // The style kept with the document; its file and the engine fetched the
-  // first time and kept (the style's file on this device), as LibLande does.
+  // first time and kept (the style's file on this device), as Linden does.
   const STYLES = [['apa', 'APA 7th'], ['chicago-author-date', 'Chicago author-date'], ['modern-language-association', 'MLA 9th'], ['harvard-cite-them-right', 'Harvard']];
   const CSL_RAW = 'https://raw.githubusercontent.com/citation-style-language/';
   const CSLW = { lib: null, engines: new Map(), loading: new Map() };
@@ -287,7 +287,7 @@
   //    selected;
   //  zoteroCodes(): Zotero's citations' codes ("... ZOTERO_ITEM CSL_CITATION
   //    {json}", and its bibliography's, "... ZOTERO_BIBL ...");
-  //  convertZotero(M, prog): those LibLande has every work of made its
+  //  convertZotero(M, prog): those Linden has every work of made its
   //    citations (zoteroCite), and if all were, Zotero's bibliography the
   //    References list; prog says how far it got (done, step, bibl,
   //    keepBib) and takes each made (prog.got({id: citation}));
@@ -336,7 +336,7 @@
   const BRIDGE = { n: 0, waiting: new Map() };
   function bridge(fn, ...args) {
     return new Promise((ok, no) => {
-      if (window.parent === window) { no(new Error('LibLande for Google Docs runs in its sidebar.')); return; }
+      if (window.parent === window) { no(new Error('Linden for Google Docs runs in its sidebar.')); return; }
       const id = ++BRIDGE.n;
       BRIDGE.waiting.set(id, { ok, no });
       window.parent.postMessage({ llCall: id, fn, args }, '*');
@@ -389,7 +389,7 @@
         prog.keepBib = jobs.length < items.length;
         const texts = renderAll(Object.assign({}, presentCites(), made), S.byKey).texts;
         jobs.forEach(j => { j.text = texts[j.id]; });
-        prog.step = 'putting LibLande\u2019s citations in their place';
+        prog.step = 'putting Linden\u2019s citations in their place';
         const r = await bridge('zoteroConvert', jobs, !prog.keepBib);
         const got = {};
         r.done.forEach(id => { got[id] = made[id]; });
@@ -412,10 +412,10 @@
           note('Select this document in the window that opened, then Select.');
           let ok = false;
           for (let i = 0; i < 90 && !ok; i++) { await new Promise(r => setTimeout(r, 2000)); ok = await bridge('canCopy'); }
-          if (!ok) throw new Error('LibLande wasn\u2019t given this document');
+          if (!ok) throw new Error('Linden wasn\u2019t given this document');
           note('Making the copy\u2026');
           c = await bridge('plainCopy');
-          if (c.needFile) throw new Error('LibLande wasn\u2019t given this document');
+          if (c.needFile) throw new Error('Linden wasn\u2019t given this document');
         }
         return {
           url: c.url,
@@ -511,7 +511,7 @@
         const r = at.insertText(text, 'Replace');
         const cc = r.insertContentControl();
         cc.tag = 'LL:' + id;
-        cc.title = 'LibLande';
+        cc.title = 'Linden';
         cc.appearance = 'BoundingBox';
         await ctx.sync();
         cc.getRange('After').select();
@@ -525,7 +525,7 @@
         const at = !inside.isNullObject && /^LL:/.test(inside.tag) ? inside.getRange('After') : sel;
         const q = at.insertText(passage, 'Replace');
         const cc = q.insertText(text, 'After').insertContentControl();
-        cc.tag = 'LL:' + id; cc.title = 'LibLande'; cc.appearance = 'BoundingBox';
+        cc.tag = 'LL:' + id; cc.title = 'Linden'; cc.appearance = 'BoundingBox';
         await ctx.sync();
         cc.getRange('After').select();
         await ctx.sync();
@@ -556,7 +556,7 @@
         const target = para.text.trim() ? para.insertParagraph('', 'After') : para;
         const cc = target.getRange('Whole').insertContentControl();
         cc.tag = 'LL:refs';
-        cc.title = 'LibLande References';
+        cc.title = 'Linden References';
         cc.appearance = 'BoundingBox';
         await ctx.sync();
         await writeRefs(ctx, cc, refsOf());
@@ -576,7 +576,7 @@
           paras.items.forEach((p, pi) => {
             look(p.text, pi).forEach(t => { if (!zText.some(z => z.includes(t.text))) found.push(t); });
           });
-          // (Those already inside a citation of LibLande's: passed over.)
+          // (Those already inside a citation of Linden's: passed over.)
           const ranges = found.map(t => { const rs = paras.items[t.para].search(t.text, { matchCase: true }); rs.load('items'); return rs; });
           await ctx.sync();
           const parents = ranges.map(rs => rs.items.map(r => { const c = r.parentContentControlOrNullObject; c.load('tag'); return c; }));
@@ -608,7 +608,7 @@
             if (!c.isNullObject && /^LL:/.test(c.tag || '')) return;
             const id = made(j.t);
             const cc = r.insertContentControl();
-            cc.tag = 'LL:' + id; cc.title = 'LibLande'; cc.appearance = 'BoundingBox';
+            cc.tag = 'LL:' + id; cc.title = 'Linden'; cc.appearance = 'BoundingBox';
           }));
           await ctx.sync();
         });
@@ -630,9 +630,9 @@
         const inside = r.parentContentControlOrNullObject;
         inside.load('tag');
         await ctx.sync();
-        if (!inside.isNullObject && /^LL:/.test(inside.tag || '')) throw new Error('it\u2019s already a LibLande citation.');
+        if (!inside.isNullObject && /^LL:/.test(inside.tag || '')) throw new Error('it\u2019s already a Linden citation.');
         const cc = r.insertContentControl();
-        cc.tag = 'LL:' + id; cc.title = 'LibLande'; cc.appearance = 'BoundingBox';
+        cc.tag = 'LL:' + id; cc.title = 'Linden'; cc.appearance = 'BoundingBox';
         await ctx.sync();
         cc.getRange('After').select();
         await ctx.sync();
@@ -663,7 +663,7 @@
         await ctx.sync();
         return fields.items.map(f => f.code || '');
       }),
-      // (Zotero's citations made LibLande's: see swapFields.)
+      // (Zotero's citations made Linden's: see swapFields.)
       async convertZotero(M, prog) {
         const zCount = async ctx => { const f = ctx.document.body.fields; f.load('items/code'); await ctx.sync(); return f.items.filter(x => /ZOTERO_ITEM/.test(x.code || '')); };
         await Word.run(async ctx => {
@@ -713,7 +713,7 @@
               const anchor = bib.result.paragraphs.getFirst().insertParagraph('', 'Before');
               bib.delete();
               const cc = anchor.getRange('Whole').insertContentControl();
-              cc.tag = 'LL:refs'; cc.title = 'LibLande References'; cc.appearance = 'BoundingBox';
+              cc.tag = 'LL:refs'; cc.title = 'Linden References'; cc.appearance = 'BoundingBox';
               await ctx.sync();
               prog.bibl = true;
             }
@@ -729,7 +729,7 @@
         await ctx.sync();
         return { n, list };
       }),
-      // (The document as Word has it, its LibLande controls taken out, opened
+      // (The document as Word has it, its Linden controls taken out, opened
       // as a new document for you to save.)
       async plainCopy() {
         let step = '';
@@ -742,7 +742,7 @@
             const out = unwrapControls(await zip.file(name).async('string'));
             if (out.n) zip.file(name, out.xml);
           }
-          // (Nor LibLande's place in it: its panel and its settings, which
+          // (Nor Linden's place in it: its panel and its settings, which
           // would have Word look for the add-in where the copy is opened.)
           Object.keys(zip.files).filter(n => /^word\/webextensions\//.test(n)).forEach(n => zip.remove(n));
           const types = zip.file('[Content_Types].xml'), rels = zip.file('_rels/.rels');
@@ -859,7 +859,7 @@
   /* ---- a citation typed by hand, selected (or the cursor in it): linked */
   // The Cite tab shows it at the top with the works it could be (engine.js
   // findTyped and matchTyped, as Link citations does); Link makes it a
-  // LibLande citation. Not in the library: Add to LibLande. Text that isn't
+  // Linden citation. Not in the library: Add to Linden. Text that isn't
   // a citation: searched for, to cite a work in its place.
   const SEL = { card: null };
   function noticeSelection(w) {
@@ -924,7 +924,7 @@
         body += it.cands.map(e => workRow(e, i, 0, it.k === e.k, many ? (it.k === e.k ? 'Chosen' : 'Choose') : 'Link')).join('');
         body += it.finding ? '<label class="search"><input type="search" data-find="' + i + '" placeholder="Another work\u2026" autocomplete="off" spellcheck="false"></label><div data-found="' + i + '"></div>'
           : '<div class="alt"><button type="button" data-search="' + i + '">' + (it.cands.length ? 'Search for another\u2026' : 'Search\u2026') + '</button>' +
-            (it.cands.length ? '' : '<button type="button" class="go" data-addlib="' + i + '">Add to LibLande\u2026</button>') + '</div>';
+            (it.cands.length ? '' : '<button type="button" class="go" data-addlib="' + i + '">Add to Linden\u2026</button>') + '</div>';
       });
       if (many) {
         const ready = c.items.every(it => it.k);
@@ -934,20 +934,20 @@
       label = 'Added';
       shown = '\u201c' + (c.e.f.title || c.e.k) + '\u201d';
       body = '<p class="note">Added to your library' + (c.cite ? ' and cited: ' + esc(c.cite) : '') + '</p>' +
-        '<div class="alt"><button type="button" class="go" data-editlib>Edit in LibLande\u2026</button><button type="button" data-undoadd>Undo</button></div>';
+        '<div class="alt"><button type="button" class="go" data-editlib>Edit in Linden\u2026</button><button type="button" data-undoadd>Undo</button></div>';
     } else {
       label = 'Selected text';
       shown = '\u201c' + c.text + '\u201d';
       body = c.hits.length ? '<p class="note">Not a citation. Searched for in your library:</p>' + c.hits.map(e => workRow(e, -1, 0, false, 'Cite here')).join('')
         : '<p class="note">Not a citation, and not in your library.</p>' + (ONLINE.q === c.text ? onlineHtml() : '');
-      body += '<div class="alt"><button type="button" class="go" data-addtext>' + (c.hits.length ? 'Add to LibLande\u2026' : 'More in LibLande\u2026') + '</button></div>';
+      body += '<div class="alt"><button type="button" class="go" data-addtext>' + (c.hits.length ? 'Add to Linden\u2026' : 'More in Linden\u2026') + '</button></div>';
     }
     $('selLabel').textContent = label;
     $('selText').textContent = shown;
     $('selBody').innerHTML = body;
     $('selCard').hidden = false;
   }
-  // The typed citation made LibLande's: found again in its paragraph (the
+  // The typed citation made Linden's: found again in its paragraph (the
   // cursor's), the one at the same place, and put in a citation of these
   // works.
   async function linkSelected() {
@@ -1048,7 +1048,7 @@
 
   /* ---- Zotero's citations: read, matched to the library, converted */
   // A Zotero citation (its field's code: "ADDIN ZOTERO_ITEM CSL_CITATION
-  // {json}") as a LibLande one: its works (by DOI, or title and year), pages
+  // {json}") as a Linden one: its works (by DOI, or title and year), pages
   // (Zotero's locator, with its label), the first work's prefix ("see"), and
   // the year alone where Zotero suppressed the author. null if any of its
   // works isn't in the library.
@@ -1103,12 +1103,12 @@
       esc(((d.author && d.author[0] && d.author[0].family) || '') + ' (' + (M.yearOf(d) || 'n.d.') + ') ' + (d.title || '')) + '</span></div>').join('') +
       (missing.length ? '<p class="note" style="margin:6px 0 0">Citations with a work not in your library stay as Zotero\u2019s.</p>' : '');
     $('zConvert').hidden = !ready;
-    $('zConvert').textContent = 'Convert ' + ready + ' to LibLande';
+    $('zConvert').textContent = 'Convert ' + ready + ' to Linden';
   }
 
-  // Zotero's citations made LibLande's, a paragraph at a time: the
+  // Zotero's citations made Linden's, a paragraph at a time: the
   // paragraph's Office Open XML read, each Zotero field in it (begin,
-  // instruction, result, end) swapped for a LibLande content control holding
+  // instruction, result, end) swapped for a Linden content control holding
   // the citation in the result's own formatting, and the paragraph put back.
   // (Selecting a field and typing over it, Word on the Mac refused.)
   // Zotero's bibliography, spanning paragraphs, is deleted as a field, with
@@ -1145,7 +1145,7 @@
         made[id] = z.cite;
         const text = renderAll(Object.assign({}, presentCites(), made), S.byKey).texts[id];
         const sdt = el('sdt'), pr = el('sdtPr'), content = el('sdtContent'), run = el('r'), t = el('t');
-        pr.appendChild(el('alias', { val: 'LibLande' }));
+        pr.appendChild(el('alias', { val: 'Linden' }));
         pr.appendChild(el('tag', { val: 'LL:' + id }));
         sdt.appendChild(pr);
         const rPr = resultRun && resultRun.getElementsByTagNameNS(W_NS, 'rPr')[0];
@@ -1194,7 +1194,7 @@
   }
 
 
-  /* ---- Link citations: those typed by hand made LibLande's */
+  /* ---- Link citations: those typed by hand made Linden's */
   // Found in each paragraph's text (engine.js findTyped), matched to the
   // library; all linked at once, each then listed with what it was linked
   // to ("check" where it could have been another), to change if wrong.
@@ -1351,7 +1351,7 @@
       document.head.appendChild(s);
     }));
   }
-  // LibLande's content controls taken out of a .docx's XML, their text kept.
+  // Linden's content controls taken out of a .docx's XML, their text kept.
   function unwrapControls(xml) {
     const doc = new DOMParser().parseFromString(xml, 'application/xml');
     let n = 0;
@@ -1397,7 +1397,7 @@
 
   /* ---- Notes: your notes and the PDF's highlights, for a work */
   // The works in the open list with notes (the .bib's Notes field, as
-  // LibLande keeps them) or a PDF; one opened shows its notes, formatted
+  // Linden keeps them) or a PDF; one opened shows its notes, formatted
   // (marks.js), and the PDF's highlights and notes page by page, read from
   // Drive the first time and kept (until the PDF changes). Quote puts a
   // highlight in the document with its citation and page.
@@ -1464,7 +1464,7 @@
       return lib;
     }).catch(e => { pdfjs = null; throw new Error('The PDF reader didn\u2019t load. Are you online?'); }));
   }
-  // A PDF's highlights and notes, top of each page first (as LibLande's
+  // A PDF's highlights and notes, top of each page first (as Linden's
   // own Notes and Annotations have them).
   async function readMarks(doc) {
     const marks = [];
@@ -1520,7 +1520,7 @@
     const md = notesOf(e).trim(), fl = pdfOf(e);
     $('nWork').innerHTML = '<div class="backbar"><button type="button" class="back" id="nBack"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>All notes</button></div>' +
       '<div class="nhead"><div class="t">' + esc(e.f.title || e.k) + '</div><div class="m">' + esc(metaOf(e)) + '</div></div>' +
-      '<div class="nsec">My notes<button type="button" id="nEdit">Edit in LibLande</button></div>' +
+      '<div class="nsec">My notes<button type="button" id="nEdit">Edit in Linden</button></div>' +
       (md ? '<div class="mynote">' + mdToHtml(md) + '</div>' : '<p class="note">No notes yet.</p>') +
       '<div class="nsec" id="nHlHead">Highlights</div><div id="nHl">' + (fl ? '<p class="note">Reading the PDF\u2026</p>' : '<p class="note">No PDF.</p>') + '</div>';
     if (!fl) return;
@@ -1530,7 +1530,7 @@
       // (In Docs: a PDF the add-on hasn't been given, handed to it in
       // Google's picker, then read.)
       if (HOST === 'gdocs' && /\b404\b/.test((err && err.message) || '')) {
-        $('nHl').innerHTML = '<p class="note">LibLande hasn\u2019t been given this PDF here yet.</p><div class="btns"><button type="button" class="btn grow" id="nGive">Give LibLande this PDF\u2026</button></div>';
+        $('nHl').innerHTML = '<p class="note">Linden hasn\u2019t been given this PDF here yet.</p><div class="btns"><button type="button" class="btn grow" id="nGive">Give Linden this PDF\u2026</button></div>';
         $('nGive').addEventListener('click', async () => {
           const b = $('nGive');
           b.disabled = true;
@@ -1540,8 +1540,8 @@
             let ok = false;
             for (let i = 0; i < 90 && !ok && NOTE.open === k; i++) { await new Promise(res => setTimeout(res, 2000)); ok = await bridge('canReach', fl.id); }
             if (ok && NOTE.open === k) openNotes(k);
-            else if (NOTE.open === k) { b.disabled = false; b.textContent = 'Give LibLande this PDF\u2026'; }
-          } catch (e) { b.disabled = false; b.textContent = 'Give LibLande this PDF\u2026'; }
+            else if (NOTE.open === k) { b.disabled = false; b.textContent = 'Give Linden this PDF\u2026'; }
+          } catch (e) { b.disabled = false; b.textContent = 'Give Linden this PDF\u2026'; }
         });
         return;
       }
@@ -1566,7 +1566,7 @@
     paintNotesList();
   }
   // A highlight in the document at the cursor: "the passage" (Author, 2011,
-  // p. 4), the citation LibLande's.
+  // p. 4), the citation Linden's.
   async function quoteMark(k, m, page) {
     const c = { items: [{ k, page: page ? 'p. ' + page : '' }], form: 'paren', own: false };
     const id = newId();
@@ -1586,7 +1586,7 @@
 
   /* ---- works found online, to add to the library and cite */
   // What's selected or typed that nothing in the library matches: looked
-  // for as LibLande's Add looks (Crossref, OpenAlex and Open Library:
+  // for as Linden's Add looks (Crossref, OpenAlex and Open Library:
   // app/titlesearch.js), the best three not in the library shown, each to
   // add to the .bib (edits.js, with its checks and a backup copy first)
   // and cite in one go.
@@ -1624,7 +1624,7 @@
       '<div class="m"><span class="kind">' + esc(c.review ? 'Book review' : TS_KINDS[c.type] || 'Other') + '</span>' + esc(onlineMeta(c)) + '</div></div>' +
       '<button type="button" class="lk" data-online="' + i + '">Add and cite</button></div>').join('');
   }
-  // One added and cited: with a DOI, its details as LibLande's Add has
+  // One added and cited: with a DOI, its details as Linden's Add has
   // them (lookup.js); or else what the search found. Cited in place of
   // the words selected (replaced), or at the cursor; or, while a
   // citation's being made or edited, put in it.
@@ -1761,7 +1761,7 @@
     let html = '';
     if (!S.results.length) {
       html = text && !S.more ? '<div class="empty">No matches in your library.</div><div class="sbd online">' + (ONLINE.q === text ? onlineHtml() : '') +
-          '<div class="alt"><button type="button" class="go" id="addLib">More in LibLande\u2026</button></div></div>'
+          '<div class="alt"><button type="button" class="go" id="addLib">More in Linden\u2026</button></div></div>'
         : !text && S.list === 'doc' ? '<div class="empty">Nothing cited yet.</div>' : '';
     }
     // (A long list a hundred at a time, more as it's scrolled.)
@@ -1801,7 +1801,7 @@
     const short = S.tabsG.length > 0;
     const n = list => { const k = listKeys(list); return (k ? [...k].filter(x => S.byKey.has(x)).length : S.entries.length).toLocaleString('en-US'); };
     const tab = (list, name, x) => '<button type="button" role="tab" data-list="' + esc(list) + '" aria-selected="' + (S.list === list) + '">' + esc(name) + '<i>' + n(list) + '</i>' +
-      (x && S.list === list ? '<span class="gx" data-drop="' + esc(list) + '" role="button" aria-label="Remove this tab" title="Remove this tab (the group stays in LibLande)">\u2715</span>' : '') + '</button>';
+      (x && S.list === list ? '<span class="gx" data-drop="' + esc(list) + '" role="button" aria-label="Remove this tab" title="Remove this tab (the group stays in Linden)">\u2715</span>' : '') + '</button>';
     const html = tab('doc', short ? 'Document' : 'In this document') + tab('lib', 'Library') +
       S.tabsG.map(t => tab('g:' + t.name, t.name.replace(/^\u2605\s*/, '\u2605 '), true)).join('') +
       '<button type="button" class="add" data-add aria-label="Add a group" title="Add a group">+</button>';
@@ -1851,15 +1851,15 @@
     if (S.list === 'g:' + name) S.list = 'lib';
     search();
   }
-  // A new LibLande group of the works this document cites, written into the
-  // .bib by LibLande's own code (edits.js, with its checks and a backup
+  // A new Linden group of the works this document cites, written into the
+  // .bib by Linden's own code (edits.js, with its checks and a backup
   // copy first), loaded here when first wanted.
   let editsReady = null;
   function loadEdits() {
     return editsReady || (editsReady = (async () => {
       window.LIBLANDE_BUILD_WORKER = false;
       for (const f of ['../build.js', '../builder.js', '../edits.js']) {
-        await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = f + '?v=' + encodeURIComponent(VERSION); sc.onload = ok; sc.onerror = () => no(new Error('LibLande\u2019s editing code didn\u2019t load. Are you online?')); document.head.appendChild(sc); });
+        await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = f + '?v=' + encodeURIComponent(VERSION); sc.onload = ok; sc.onerror = () => no(new Error('Linden\u2019s editing code didn\u2019t load. Are you online?')); document.head.appendChild(sc); });
       }
       const io = async (path, opts, base) => {
         if (!tokenOk()) await signIn('');
@@ -2097,7 +2097,7 @@
     $('menuWho').textContent = (email || 'Signed in') + (access === 'limited' ? ' \u00b7 limited access' : '');
   }
   function paintOffline() { $('offline').hidden = navigator.onLine; }
-  // LibLande, or a link into it: "#add=<what to look for>" opens Add with
+  // Linden, or a link into it: "#add=<what to look for>" opens Add with
   // it looked up; "#open=<cite key>&view=notes" opens a work's Notes.
   const openLibLande = (hash = '') => { try { Office.context.ui.openBrowserWindow(LIBLANDE + hash); } catch (e) { window.open(LIBLANDE + hash, '_blank'); } };
   const addInLibLande = what => openLibLande(what && what.trim() ? '#add=' + encodeURIComponent(what.trim()) : '');
@@ -2259,7 +2259,7 @@
     $('plainNo').addEventListener('click', () => { $('plainAsk').hidden = true; });
     $('plainYes').addEventListener('click', convertPlain);
     $('signin').addEventListener('click', () => reload(false));
-    // (The first sign-in: full or limited access, as chosen in LibLande.)
+    // (The first sign-in: full or limited access, as chosen in Linden.)
     document.querySelectorAll('[data-access]').forEach(b => b.addEventListener('click', () => {
       access = b.dataset.access;
       store.set('access', access);

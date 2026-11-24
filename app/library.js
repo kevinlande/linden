@@ -1,8 +1,8 @@
-﻿// LibLande: the library: data, the reading list, groups, search, the list and the details.
+﻿// Linden: the library: data, the reading list, groups, search, the list and the details.
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/library.js'] = '2026-11-23.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/library.js'] = '2026-11-24.01';
 const $ = s => document.querySelector(s);
 // The version, as the page gives it (index.html, the loading screen): the
 // one place the app's scripts take it from.
@@ -87,7 +87,7 @@ const store = {
       // with nothing to say.)
       if (/quota/i.test(String(err && (err.name + ' ' + err.message))) && !store.full) {
         store.full = true;
-        setTimeout(() => { if (typeof toast === 'function') toast('This device\u2019s storage for LibLande is full: some things (your Inbox, settings kept here) may not be kept on it. Close papers you\u2019re not reading, or clear website data for other sites.', 10000); }, 0);
+        setTimeout(() => { if (typeof toast === 'function') toast('This device\u2019s storage for Linden is full: some things (your Inbox, settings kept here) may not be kept on it. Close papers you\u2019re not reading, or clear website data for other sites.', 10000); }, 0);
       }
     }
   },
@@ -136,7 +136,7 @@ try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', barC
 applyTheme(store.get('theme', 'auto'));
 // Themes (colours and type), chosen in Settings; each has light and dark.
 const THEMES = [
-  { id: 'liblande', name: 'LibLande', note: 'Green, on warm grey', light: ['#edf1ef', '#ffffff', '#1f6b5c', '#1b2321'], dark: ['#1a1f1e', '#131716', '#62b8a1', '#e2e8e5'] },
+  { id: 'liblande', name: 'Linden', note: 'Green, on warm grey', light: ['#edf1ef', '#ffffff', '#1f6b5c', '#1b2321'], dark: ['#1a1f1e', '#131716', '#62b8a1', '#e2e8e5'] },
   { id: 'apple', name: 'Apple', note: 'System blue and glass, like iOS and macOS', light: ['#f2f2f7', '#ffffff', '#007aff', '#1d1d1f'], dark: ['#121214', '#1c1c1e', '#0a84ff', '#f5f5f7'] },
   { id: 'graphite', name: 'Graphite', note: 'Quiet greys, like the Mac\u2019s graphite', light: ['#f0f0f0', '#ffffff', '#5f5f64', '#1f1f1f'], dark: ['#171717', '#1e1e1e', '#b0b0b5', '#ececec'] },
   { id: 'sepia', name: 'Sepia', note: 'Warm paper, for long reading', light: ['#f1e7d4', '#fbf6ec', '#9a5a22', '#3b2e22'], dark: ['#191511', '#1f1a15', '#d9a066', '#eadfcf'] },
@@ -445,7 +445,7 @@ const elsewhere = fileId => { const x = SYNC.position && POS[fileId]; return x &
 // read it: by its words, 4 seconds for a page with little text (a figure,
 // say) up to 20 for a full one; 10 for a page of a scan, with no text.
 // Scrolling past, or jumping to the end, doesn't count; nor does time with
-// LibLande out of sight. Reading 90% of the pages (to where the references
+// Linden out of sight. Reading 90% of the pages (to where the references
 // start) is reading it through: a table or two skimmed past doesn't hold
 // it back.
 const DWELL = { key: null, page: 0, t0: 0, acc: new Map(), need: new Map(), timer: 0 };
@@ -473,7 +473,7 @@ function noteProgress(page, total) {
   clearInterval(DWELL.timer);
   DWELL.timer = setInterval(dwellTick, 1000);
 }
-// (The time since last looked, to the page you're on, if LibLande was in
+// (The time since last looked, to the page you're on, if Linden was in
 // sight with the paper open.)
 function dwellFlush() {
   const now = Date.now();
@@ -623,7 +623,7 @@ function progressBoth(mine, v) {
 // server.js.)
 window.LIBLANDE_MERGE = { progress: progressBoth };
 // Your other devices' progress and places in papers, read in again on
-// coming back to LibLande after a minute or more away (and on Refresh:
+// coming back to Linden after a minute or more away (and on Refresh:
 // see start.js), so the reading list and Where you left off agree.
 function pullPrefs(prefs) {
   if (!prefs) return;
@@ -784,7 +784,7 @@ function renderRLBar() {
     if (!old) { old = document.createElement('span'); old.className = 'rl-stale'; bar.querySelector('.rl-count').after(old); }
     const d = new Date(READING.staleAt), today = d.toDateString() === new Date().toDateString();
     old.textContent = 'Your list as of ' + (today ? '' : d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ', ') + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-    old.title = 'Google Drive couldn\u2019t be reached, so this is the list as LibLande last had it. It updates once Drive can be reached.';
+    old.title = 'Google Drive couldn\u2019t be reached, so this is the list as Linden last had it. It updates once Drive can be reached.';
   } else if (old) old.remove();
   // Continue reading: the paper on the list you were in last (past its
   // first page, not yet read through), a tap from where you left it.
@@ -1221,7 +1221,7 @@ function isForthcoming(e) {
 // "versionof" field, so the link is kept in the .bib. (Not biblatex's
 // "related": without a relatedtype, biblatex, biblatex-apa too, prints the
 // related entry after it, garbled. An older "related" with no type, as
-// LibLande wrote before November 2026, is still read.) Each version is
+// Linden wrote before November 2026, is still read.) Each version is
 // shown under its main one.
 let VERSION_OF = new Map(), VERSIONS = new Map();
 const linkKeys = v => String(v || '').split(',').map(k => k.trim()).filter(Boolean);
@@ -2549,7 +2549,7 @@ async function reachCheck() {
   let ok = navigator.onLine;
   if (ok && !(window.LIBLANDE_TEST && !window.LIBLANDE_REACH)) {
     const ctl = new AbortController(), give = setTimeout(() => ctl.abort(), 12000);
-    // (Google Drive's own address, which LibLande needs: any answer will do,
+    // (Google Drive's own address, which Linden needs: any answer will do,
     // as it isn't signed. Wi-Fi asking you to sign in to it can't answer
     // for Google over a secure connection, so that counts as offline.)
     try { await (window.LIBLANDE_REACH || fetch)('https:\/\/www.googleapis.com/drive/v3/about?fields=kind', { mode: 'no-cors', cache: 'no-store', credentials: 'omit', signal: ctl.signal }); }
@@ -3255,7 +3255,7 @@ function renderDetail() {
   const metaH = meta.length ? `<div class="d-meta">${meta.join('')}</div>` : '';
 
   if (e.ib) {
-    notices += `<p class="inbox-note">Added in LibLande and waiting in your inbox. To move it into ${esc(DATA.source)}, open ` +
+    notices += `<p class="inbox-note">Added in Linden and waiting in your inbox. To move it into ${esc(DATA.source)}, open ` +
       `LibLande \u203a Inbox \u203a LibLande inbox.bib in BibDesk and drag it into your library.</p>`;
   }
   const kwAdd = gs ? `<span class="kw-add-wrap"><button type="button" class="chip kw-add" data-kw-add title="Add a keyword">+ Keyword</button></span>` : '';
@@ -3352,7 +3352,7 @@ async function findCover(q) {
 }
 // Every book's cover (and every edited volume's), looked up in the
 // background once the library's open, so it's there when the book is
-// opened, offline too. One every second and a half, paused while LibLande
+// opened, offline too. One every second and a half, paused while Linden
 // is out of sight or offline, and a minute's wait if Open Library doesn't
 // answer. (Once on each device; then only new books, and misses a month on.)
 let coverSweep = false;

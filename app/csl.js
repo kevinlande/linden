@@ -1,8 +1,8 @@
-﻿// LibLande: Citation styles' data: a publication as CSL wants it (cslItem), and what citeproc-js gives back as LibLande's { text, html, parts } (cslOut). Shared with LibLande for Word (pages/word), which loads this file on its own.
+﻿// Linden: Citation styles' data: a publication as CSL wants it (cslItem), and what citeproc-js gives back as Linden's { text, html, parts } (cslOut). Shared with Linden for Word (pages/word), which loads this file on its own.
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/csl.js'] = '2026-11-23.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/csl.js'] = '2026-11-24.01';
 /* ---- a publication as CSL wants it */
 const CSL_TYPES = { article: 'article-journal', book: 'book', proceedings: 'book', incollection: 'chapter', inbook: 'chapter',
   inproceedings: 'paper-conference', conference: 'paper-conference', phdthesis: 'thesis', mastersthesis: 'thesis',
@@ -47,7 +47,7 @@ function cslItem(e, id) {
   return item;
 }
 
-// The engine's HTML as LibLande's { text, html, parts }: italics, bold,
+// The engine's HTML as Linden's { text, html, parts }: italics, bold,
 // superscripts and small capitals kept; links and the rest as their text.
 function cslOut(h) {
   const box = new DOMParser().parseFromString('<body>' + h + '</body>', 'text/html').body;

@@ -1,11 +1,11 @@
-﻿// LibLande: Search by title, in Add a publication: candidates from Crossref, OpenAlex and Open Library, one chosen to fill in the form.
-// (Also loaded on its own by LibLande for Word, to find works online and
+﻿// Linden: Search by title, in Add a publication: candidates from Crossref, OpenAlex and Open Library, one chosen to fill in the form.
+// (Also loaded on its own by Linden for Word, to find works online and
 // make a new one's cite key: pages/word/index.html gives it what it uses
-// from the rest. Its page wiring is only for LibLande's Add.)
+// from the rest. Its page wiring is only for Linden's Add.)
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/titlesearch.js'] = '2026-11-23.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/titlesearch.js'] = '2026-11-24.01';
 /* ------------------------------------------------------------ title search */
 // A title (with an author or a year, if you like) typed in Add's lookup
 // box, instead of a DOI: candidates from Crossref (articles, chapters, and
@@ -183,7 +183,7 @@ function tsHave(c) {
 // One source asked, given 12 seconds to answer.
 const tsAsk = (get, q, signal) => Promise.race([get(q, signal), new Promise((ok, no) => setTimeout(() => no(new Error('no answer')), 12000))]);
 // All the sources asked at once, and their matches merged: { list, failed }
-// (the sources that didn't answer). For LibLande for Word.
+// (the sources that didn't answer). For Linden for Word.
 async function tsFind(q, signal) {
   const found = {}, failed = [];
   await Promise.all(TS_SOURCES.map(async ([name, get]) => {
@@ -282,7 +282,7 @@ function tsChoose(c) {
 
 // In the box: searched on a pause in typing (or Return, in fillFromBox);
 // Down goes into the list, Up and Down move in it, Esc closes it.
-// (Only in LibLande itself, which has Add.)
+// (Only in Linden itself, which has Add.)
 const TS_PAGE = !!document.getElementById('sheetBody');
 if (TS_PAGE) $('#sheetBody').addEventListener('input', ev => {
   if (ev.target.id !== 'doiLookup' || !sheet || sheet.mode !== 'add') return;

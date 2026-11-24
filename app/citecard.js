@@ -1,8 +1,8 @@
-﻿// LibLande: a citation's card, in the reader: the pointer rested on a citation (or on an entry in the reference list), or a tap on one, shows the work cited, from your library or found online.
+﻿// Linden: a citation's card, in the reader: the pointer rested on a citation (or on an entry in the reference list), or a tap on one, shows the work cited, from your library or found online.
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/citecard.js'] = '2026-11-23.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/citecard.js'] = '2026-11-24.01';
 /* ------------------------------------------------------------ a citation's card */
 // Rest the pointer on a citation in the text, "Siegel (2010)" or "(Burge,
 // 2010; Siegel, 2010)" (each name and year its own), on a link to the
@@ -16,7 +16,7 @@
 // menu. Found from your library, the paper's own reference list (OpenAlex's,
 // as Related has it), or the text of its entry looked up as Related's Add
 // to library does; nothing asked online until a card is wanted, and each
-// answer kept while LibLande's open.
+// answer kept while Linden's open.
 //
 // The card stays while the pointer is on the citation or the card, and a
 // moment after it leaves one for the other (heading for the card, other

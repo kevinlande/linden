@@ -1,8 +1,8 @@
-﻿// LibLande: Cite Check: a manuscript's citations against its references and the library.
+﻿// Linden: Cite Check: a manuscript's citations against its references and the library.
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/citecheck.js'] = '2026-11-23.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/citecheck.js'] = '2026-11-24.01';
 /* ------------------------------------------------------------ manuscript check */
 // A manuscript's citations checked: a Google Doc, or a Word file from Google
 // Drive or this device, read (never changed). Each APA author-date citation
@@ -251,7 +251,7 @@ function msCheck(paras, notes) {
 // deleted tracked changes and field codes (Zotero's, say) left out.
 async function msDocx(bytes, name) {
   let zip;
-  try { zip = await (await loadJSZip()).loadAsync(bytes); } catch (err) { throw new Error('LibLande couldn’t open ' + name + ' as a Word file (.docx).'); }
+  try { zip = await (await loadJSZip()).loadAsync(bytes); } catch (err) { throw new Error('Linden couldn’t open ' + name + ' as a Word file (.docx).'); }
   const W = 'http:\/\/schemas.openxmlformats.org/wordprocessingml/2006/main';
   const paras = async path => {
     const f = zip.file(path);
@@ -306,10 +306,10 @@ async function msFromDrive(link) {
     // An older Word file: Google converts a copy to a Google Doc, which is
     // read, then deleted.
     const copy = await (await msGet(api + '/copy?fields=id&supportsAllDrives=true', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: m.name + ' (LibLande’s temporary copy)', mimeType: 'application/vnd.google-apps.document' }) })).json();
+      body: JSON.stringify({ name: m.name + ' (Linden’s temporary copy)', mimeType: 'application/vnd.google-apps.document' }) })).json();
     try { return out({ name: m.name, paras: await text(copy.id) }); } finally { msGet(MS_API + encodeURIComponent(copy.id), { method: 'DELETE' }).catch(() => {}); }
   }
-  throw new Error('LibLande reads Google Docs and Word files; ' + m.name + ' is neither.');
+  throw new Error('Linden reads Google Docs and Word files; ' + m.name + ' is neither.');
 }
 const MS_API = 'https:\/\/www.googleapis.com/drive/v3/files/';
 async function msGet(url, opts = {}) {
@@ -377,7 +377,7 @@ function openMsCheck() {
   sheet = { mode: 'mscheck' };
   const recent = MS.recent.filter(x => x.id);
   showSheet(`<h2>Cite Check</h2>` +
-    `<p class="sheet-note">LibLande reads the manuscript, without changing it: every citation should have its reference, and every reference a citation.</p>` +
+    `<p class="sheet-note">Linden reads the manuscript, without changing it: every citation should have its reference, and every reference a citation.</p>` +
     (gs && recent.length ? `<div class="ms-group"><div class="ms-gh">${ICON.history}Checked lately</div>` +
       recent.map(x => msFileRow(x, msAgo(x.at) + (x.todo ? ` · <b class="ms-todo">${x.todo} to fix</b>` : ' · all in order'))).join('') + `</div>` : '') +
     (gs ? `<div class="ms-group"><div class="ms-gh">${ICON.folder}In your Google Drive</div>` +
@@ -526,7 +526,7 @@ function showMsReport(rep) {
     sec('warn', ICON.pencil, 'Worth a look', flags, true) +
     sec('warn', ICON.lib, 'Cited, but not in your library', noLib, true) +
     sec('warn', ICON.lib, 'References not in your library', notInLib, !v.missing.length && !v.uncited.length) +
-    sec('warn', ICON.doc, 'References LibLande couldn’t read', unread, false) +
+    sec('warn', ICON.doc, 'References Linden couldn’t read', unread, false) +
     sec('good', ICON.check, 'All in order', ok, false) +
     (v.hidden ? `<p class="ms-note">${ICON.x}<span>${v.hidden} finding${v.hidden === 1 ? '' : 's'} dismissed. <button type="button" class="linkish" data-ms-unhide>Show ${v.hidden === 1 ? 'it' : 'them'} again</button></span></p>` : ''), 'Done');
   $('#sheetCancel').hidden = true;
@@ -604,12 +604,12 @@ async function docsCall(path, opts = {}) {
   try { msg = ((await r.json()).error || {}).message || ''; } catch (e) { /* none */ }
   if (r.status === 403 && /has not been used|is disabled|SERVICE_DISABLED/i.test(msg)) {
     const link = (/https:\/\/console\.(?:developers|cloud)\.google\.com\/\S+/.exec(msg) || [''])[0].replace(/[.,]+$/, '');
-    throw new Error('Google Docs’ API isn’t turned on for LibLande yet. In the Google Cloud console, for the project LibLande signs in with, turn on the “Google Docs API”' + (link ? ' (' + link + ')' : '') + ', then try again.');
+    throw new Error('Google Docs’ API isn’t turned on for Linden yet. In the Google Cloud console, for the project Linden signs in with, turn on the “Google Docs API”' + (link ? ' (' + link + ')' : '') + ', then try again.');
   }
   if (r.status === 403) throw new Error('Google Docs didn’t allow the change: perhaps you can only view or comment on this document.');
   throw new Error('Google Docs didn’t make the change (error ' + r.status + (msg ? ': ' + msg : '') + ').');
 }
-// A reference's text and its italic stretches, from LibLande's APA HTML.
+// A reference's text and its italic stretches, from Linden's APA HTML.
 function msRuns(html) {
   const box = document.createElement('div');
   box.innerHTML = html;
@@ -631,7 +631,7 @@ function msFixes(rep) {
     const r = f.r || (f.pub && f.w && f.w.refs.length === 1 ? f.w.refs[0] : null), e = f.pub || (f.r && f.r.lib && f.r.lib.e);
     if (r && e && !out.some(x => x.r === r)) out.push({ kind: 'update', r, e, on: true });
   });
-  // (Every other reference LibLande recognises, put in your style, if it
+  // (Every other reference Linden recognises, put in your style, if it
   // differs from it in more than punctuation and spacing; those it
   // doesn't, left as written.)
   (rep.refs || []).forEach(r => {
@@ -651,7 +651,7 @@ function openMsFix(rep) {
   showSheet(`<h2>Fix the References</h2>` +
     `<p class="sheet-note">Changes “${esc(rep.name)}” into your style (${esc(citeTitle())}). Unrecognised references and in-text citations are left alone. Untick any to keep as written. To undo, use the document’s version history (File › Version history).</p>` +
     (fixes.length ? part('add', 'Missing from the References') + part('update', 'Out of date') + part('restyle', 'Not in ' + citeShort() + '\u2019s form') + part('remove', 'Never cited')
-      : `<p class="ms-dim">Nothing in the References for LibLande to change.</p>`), fixes.length ? 'Make the changes' : 'Done');
+      : `<p class="ms-dim">Nothing in the References for Linden to change.</p>`), fixes.length ? 'Make the changes' : 'Done');
 }
 $('#sheetBody').addEventListener('change', ev => {
   const c = ev.target.closest('[data-msf]');
@@ -670,7 +670,7 @@ function msDocParas(doc) {
 function msFixRequests(doc, fixes) {
   const paras = msDocParas(doc);
   const h = paras.map((p, i) => [p, i]).filter(([p]) => MS_REFS_HEAD.test(p.text)).pop();
-  if (!h) throw new Error('LibLande couldn’t find the References heading in the document.');
+  if (!h) throw new Error('Linden couldn’t find the References heading in the document.');
   let end = paras.length;
   for (let i = h[1] + 1; i < paras.length; i++) if (paras[i].heading || MS_AFTER_REFS.test(paras[i].text)) { end = i; break; }
   const refs = paras.slice(h[1] + 1, end).filter(p => p.text.trim().length > 15);
@@ -730,7 +730,7 @@ async function runMsFix() {
     openMsCheck();
     runMsCheck({ id: rep.id, kind: rep.kind });
   } catch (err) {
-    if (sheet === s) sheetMsg(/requiredRevisionId|revision/i.test(errText(err)) ? 'The document changed while LibLande was reading it. Try again.' : errText(err), true);
+    if (sheet === s) sheetMsg(/requiredRevisionId|revision/i.test(errText(err)) ? 'The document changed while Linden was reading it. Try again.' : errText(err), true);
   } finally {
     if (sheet === s) sheetBusy(false);
   }

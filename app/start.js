@@ -1,8 +1,8 @@
-﻿// LibLande: messages, navigation, and starting up.
+﻿// Linden: messages, navigation, and starting up.
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/start.js'] = '2026-11-23.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/start.js'] = '2026-11-24.01';
 // On GitHub Pages, every part of the app must be from the same version: a
 // part kept from an older one (the offline copy, served when the network
 // was slow) lacks what this page needs. Then the kept copies go, and the
@@ -29,15 +29,15 @@ if (window.LIBLANDE_PAGES && navigator.onLine) {
       // not this version's, which a new worker may have just made.)
       fetch('sw.js?net=' + Date.now(), Object.assign({ cache: 'no-store', headers: { 'X-LibLande-Net': '1' } }, net ? { signal: net.signal } : {}))
         .then(r => { if (!r.ok) throw new Error('no'); return window.caches ? caches.keys().then(ks => Promise.all(ks.filter(k => k.indexOf('liblande-app-') === 0 && k !== 'liblande-app-' + want).map(k => caches.delete(k)))) : null; })
-        .then(again, () => { RELOADING = false; console.warn('LibLande: parts from another version, and the internet not answering: kept as they are.'); });
+        .then(again, () => { RELOADING = false; console.warn('Linden: parts from another version, and the internet not answering: kept as they are.'); });
     } else {
-      console.warn('LibLande: parts from another version: ' + old.join(', '));
+      console.warn('Linden: parts from another version: ' + old.join(', '));
     }
   }
 }
 // A new version, installed whole beside this one: switched to at once if
-// LibLande has only just opened and nothing's open to lose; otherwise
-// offered (Reload), and taken next time LibLande opens anyway.
+// Linden has only just opened and nothing's open to lose; otherwise
+// offered (Reload), and taken next time Linden opens anyway.
 const OPENED_AT = Date.now();
 function updateNow() {
   const w = window.LIBLANDE_UPDATE;
@@ -48,20 +48,20 @@ function updateNow() {
 const updateSafe = () => !sheet && !(window.V && V.doc && (V.dirty || V.bmDirty || V.drawing)) && !(window.NOTES && NOTES.pop) && !(typeof RN !== 'undefined' && RN.ed && RN.ed.contains(document.activeElement));
 function updateOffer() {
   if (Date.now() - OPENED_AT < 20000 && updateSafe()) { updateNow(); return; }
-  setTimeout(() => toast('A new version of LibLande is ready.', 15000, { label: 'Reload', run: updateWhenSaved }), 1500);
+  setTimeout(() => toast('A new version of Linden is ready.', 15000, { label: 'Reload', run: updateWhenSaved }), 1500);
 }
 // (The open paper saved first; switched only once nothing's left unsaved.)
 async function updateWhenSaved() {
   if (typeof saveNow === 'function' && window.V && V.doc) { try { await saveNow(); } catch (e) { /* said there */ } }
-  if (window.V && V.doc && (V.dirty || V.bmDirty)) { toast('Your marks aren\u2019t saved yet, so LibLande didn\u2019t reload. Try again once they are.', 6000); return; }
+  if (window.V && V.doc && (V.dirty || V.bmDirty)) { toast('Your marks aren\u2019t saved yet, so Linden didn\u2019t reload. Try again once they are.', 6000); return; }
   updateNow();
 }
 window.addEventListener('liblande-update', updateOffer);
-// (One found before this script ran, as LibLande loaded: offered now.)
+// (One found before this script ran, as Linden loaded: offered now.)
 if (window.LIBLANDE_UPDATE) setTimeout(updateOffer, 0);
 // Another window switched to the new version: this one's parts in memory
 // are the old ones, so it's offered a reload too.
-window.addEventListener('liblande-switched', () => setTimeout(() => toast('LibLande was updated in another window.', 30000, { label: 'Reload', run: () => { if (window.V && V.doc && (V.dirty || V.bmDirty)) saveNow().finally(() => location.reload()); else location.reload(); } }), 500));
+window.addEventListener('liblande-switched', () => setTimeout(() => toast('Linden was updated in another window.', 30000, { label: 'Reload', run: () => { if (window.V && V.doc && (V.dirty || V.bmDirty)) saveNow().finally(() => location.reload()); else location.reload(); } }), 500));
 /* ------------------------------------------------------------ clipboard + toast */
 let toastTimer;
 // action: {label, run}, a button in the message (such as Undo).
@@ -135,18 +135,108 @@ function copy(text, msg, html) {
 }
 
 /* ------------------------------------------------------------ settings' tabs */
-// Settings in tabs: Library, Appearance, Citing, Sync, Extensions (Word,
+// Settings in tabs: Library, Appearance, Citing, This device (reading
+// offline, and sync), Extensions (Word,
 // adding from the web); the one open last opened again (Library at first).
 function setSettingsTab(t) {
   if (!document.querySelector('#setupEdit .set-sec[data-stab="' + t + '"]')) t = 'library';
   store.set('setTab', t);
   document.querySelectorAll('#setTabs [data-stab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.stab === t)));
   document.querySelectorAll('#setupEdit .set-sec').forEach(s => s.classList.toggle('off-tab', s.dataset.stab !== t));
+  if (t === 'sync') keepShow().catch(() => {});
   $('#setup').scrollTop = 0;
   const card = $('#setupForm');
   if (card) card.scrollTop = 0;
 }
 $('#setTabs').addEventListener('click', ev => { const b = ev.target.closest('[data-stab]'); if (b) setSettingsTab(b.dataset.stab); });
+
+/* ------------------------------------------------------------ reading offline */
+// Settings > This device: how many papers sw.js keeps for reading offline
+// (60, 200 or all; written for it at KEEP_KEY in the papers' cache), what's
+// kept now, and Remove kept papers. The default: 200 in the app added to
+// the Dock or Home Screen (where Safari doesn't clear what's kept), 60 in
+// a browser tab.
+const KEEP_KEY = 'https:\/\/www.googleapis.com/drive/v3/files/__keep__', PAPERS_CACHE = 'liblande-papers';
+const KEEP_MAX = { 60: ['Up to 60 papers, about 1.5 GB', 1.5e9, 60], 200: ['Up to 200 papers, about 5 GB', 5e9, 200], all: ['Every paper you open, while there\u2019s room', 0, 0] };
+const installedApp = () => !!((window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone);
+const sizeText = n => n >= 1e9 ? (n / 1e9).toFixed(1) + ' GB' : Math.max(1, Math.round(n / 1e6)) + ' MB';
+async function keepChoice() {
+  try { const r = await (await caches.open(PAPERS_CACHE)).match(KEEP_KEY); if (r) { const v = String((await r.json()).keep); if (KEEP_MAX[v]) return { v, set: true }; } } catch (e) { /* the default */ }
+  return { v: installedApp() ? '200' : '60', set: false };
+}
+async function keepSet(v) {
+  await (await caches.open(PAPERS_CACHE)).put(KEEP_KEY, new Response(JSON.stringify({ keep: v }), { headers: { 'Content-Type': 'application/json' } }));
+  const sw = navigator.serviceWorker && navigator.serviceWorker.controller;
+  if (sw) sw.postMessage({ type: 'trim' });
+}
+async function keptPapers() {
+  const c = await caches.open(PAPERS_CACHE), keys = (await c.keys()).filter(r => r.url.endsWith('?alt=media'));
+  const sizes = await Promise.all(keys.map(async r => { const x = await c.match(r); return Number(x && x.headers.get('X-LibLande-Size')) || 0; }));   // keep-name
+  return { c, keys, n: keys.length, bytes: sizes.reduce((a, b) => a + b, 0) };
+}
+async function keepShow() {
+  const sec = $('#keepSec');
+  if (!sec || sec.hidden) return;
+  const { v } = await keepChoice(), k = await keptPapers();
+  sec.querySelectorAll('[data-keep]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.keep === v)));
+  let room = 0;
+  try { const e = await navigator.storage.estimate(); room = Math.max(0, (e.quota || 0) - (e.usage || 0)); } catch (e) { room = 0; }
+  $('#keepNow').innerHTML = `<b>${k.n.toLocaleString()} ${k.n === 1 ? 'paper' : 'papers'}</b>, ${sizeText(k.bytes)}`;
+  $('#keepRoom').textContent = room ? 'Room for ' + sizeText(room) + ' more' : '';
+  // (Full by whichever is nearer its limit: the count or the size.)
+  const cap = KEEP_MAX[v][1] || (k.bytes + room), byN = KEEP_MAX[v][2] ? k.n / KEEP_MAX[v][2] : 0;
+  const full = Math.max(byN, cap ? k.bytes / cap : 0);
+  $('#keepBar').style.width = Math.min(100, Math.max(k.n ? 1.5 : 0, full * 100)) + '%';
+  $('#keepMax').textContent = KEEP_MAX[v][0];
+  $('#keepClear').disabled = !k.n;
+  $('#keepTab').hidden = installedApp();
+}
+// (On Pages, where sw.js keeps papers; and on the test page.)
+if ((window.LIBLANDE_PAGES || window.LIBLANDE_TEST) && window.caches && $('#keepSec')) {
+  $('#keepSec').hidden = false;
+  // (The default, written once, so sw.js keeps to it.)
+  keepChoice().then(c => { if (!c.set) keepSet(c.v).catch(() => {}); });
+  const keepTo = async v => {
+    try { await keepSet(v); } catch (e) { toast('Couldn\u2019t change it: ' + errText(e), 5000); }
+    setTimeout(keepShow, 600);
+    keepShow();
+  };
+  // (A smaller choice than what's kept: asked first, saying what would go.)
+  const keepAsk = (title, text, yes, run) => {
+    $('#keepAskTitle').textContent = title; $('#keepAskText').textContent = text; $('#keepYes').textContent = yes;
+    KEEP_ASK.run = run;
+    $('#keepAsk').showModal(); $('#keepNo').focus();
+  };
+  const KEEP_ASK = { run: null };
+  $('#keepSeg').addEventListener('click', async ev => {
+    const b = ev.target.closest('[data-keep]');
+    if (!b || b.getAttribute('aria-checked') === 'true') return;
+    const v = b.dataset.keep, [, maxB, maxN] = KEEP_MAX[v];
+    if (maxN) {
+      const k = await keptPapers();
+      const sizes = await Promise.all(k.keys.map(async r => { const x = await k.c.match(r); return Number(x && x.headers.get('X-LibLande-Size')) || 0; }));   // keep-name
+      let n = k.n, bytes = k.bytes, gone = 0, goneB = 0;
+      for (let i = 0; i < sizes.length - 1 && (n > maxN || bytes > maxB); i++) { n--; bytes -= sizes[i]; gone++; goneB += sizes[i]; }
+      if (gone) { keepAsk('Keep only the ' + maxN + ' most recent?', gone.toLocaleString() + ' ' + (gone === 1 ? 'paper' : 'papers') + ', ' + sizeText(goneB) + ', will be removed from this device. They\u2019re still in Google Drive.', 'Remove', () => keepTo(v)); return; }
+    }
+    keepTo(v);
+  });
+  $('#keepClear').addEventListener('click', async () => {
+    const k = await keptPapers();
+    keepAsk('Remove the kept papers?', 'Remove ' + k.n.toLocaleString() + ' ' + (k.n === 1 ? 'paper' : 'papers') + ', ' + sizeText(k.bytes) + ', from this device? They\u2019re still in Google Drive, and marks not yet saved there are kept.', 'Remove', keepClear);
+  });
+  $('#keepNo').addEventListener('click', () => $('#keepAsk').close());
+  $('#keepYes').addEventListener('click', () => { $('#keepAsk').close(); const run = KEEP_ASK.run; KEEP_ASK.run = null; if (run) run(); });
+  async function keepClear() {
+    try {
+      const k = await keptPapers();
+      for (const r of await k.c.keys()) if (r.url !== KEEP_KEY) await k.c.delete(r);
+      toast('Removed ' + k.n.toLocaleString() + ' kept ' + (k.n === 1 ? 'paper' : 'papers') + ' (' + sizeText(k.bytes) + ').', 4000);
+    } catch (e) { toast('Couldn\u2019t remove them: ' + errText(e), 5000); }
+    keepShow();
+    if (typeof refreshSaved === 'function') refreshSaved();
+  }
+}
 
 /* ------------------------------------------------------------ navigation */
 function go(view) {
@@ -174,7 +264,7 @@ $('#sideToggle').addEventListener('click', () => {
   else foldSide(!app.classList.contains('side-collapsed'));
 });
 $('#sideClose').addEventListener('click', closeDrawer);
-// The LibLande icon at the top of the sidebar closes it too.
+// The Linden icon at the top of the sidebar closes it too.
 $('.side-head .app-icon').addEventListener('click', () => {
   if (phoneMQ.matches) go('list');
   else if (tabletMQ.matches) closeDrawer();
@@ -302,7 +392,7 @@ const gs = window.google && google.script && google.script.run;
 const callServer = (name, ...args) => new Promise((resolve, reject) => {
   const runner = gs.withSuccessHandler(resolve).withFailureHandler(reject);
   if (typeof runner[name] !== 'function') {
-    reject(new Error('LibLande can\u2019t do this (' + name + '). Close it and open it again to get the latest version.'));
+    reject(new Error('Linden can\u2019t do this (' + name + '). Close it and open it again to get the latest version.'));
     return;
   }
   runner[name](...args);
@@ -333,10 +423,10 @@ function renderLibOthers(st) {
   }).join('');
 }
 
-// With limited access (Pages): the PDFs the library links that LibLande
+// With limited access (Pages): the PDFs the library links that Linden
 // hasn't been given yet, and giving it them in Google's picker. (Inbox
 // entries aside.)
-// And the folders the .bib names that LibLande can't see (BibDesk made
+// And the folders the .bib names that Linden can't see (BibDesk made
 // them after setup): asked for first, and never made a second time.
 let ACCESS = 'full', TO_ADD = null;
 const notAdded = () => ENTRIES.reduce((n, e) => n + (e.ib ? 0 : (e.files || []).filter(f => f.x).length), 0);
@@ -376,7 +466,7 @@ async function offerAddPapers(tour) {
   const n = notAdded(), f = unseenFolders().length, more = !first && n + f > TO_ADD;
   TO_ADD = n + f;
   if (!(n + f) || !(first || more)) return false;
-  toast((first ? '' : 'New in your library: ') + toAddText(n, f) + ' to give LibLande, from your Google Drive', 15000, [{ label: 'Add them', run: addPapers }].concat(tour ? [{ label: 'Take the tour', run: startTour }] : []));
+  toast((first ? '' : 'New in your library: ') + toAddText(n, f) + ' to give Linden, from your Google Drive', 15000, [{ label: 'Add them', run: addPapers }].concat(tour ? [{ label: 'Take the tour', run: startTour }] : []));
   return true;
 }
 
@@ -391,7 +481,7 @@ async function waitForBuild(progress) {
     await new Promise(r => setTimeout(r, 4000));
     status = await callServer('getStatus');
   }
-  if (status && status.error) throw new Error('LibLande couldn\u2019t build your library: ' + status.error);
+  if (status && status.error) throw new Error('Linden couldn\u2019t build your library: ' + status.error);
   if (status && status.configured && status.stamp == null) throw new Error('The build didn\u2019t finish. Tap Refresh to try again.');
   return status;
 }
@@ -513,7 +603,7 @@ async function update(quiet) {
   cache.put(lib);
   fetchAheadSoon();
   if (!quiet) toast('Library updated: ' + d.source + ' as of ' + builtText(d), 3000);
-  // (New papers that LibLande isn't given yet: said so, after that.)
+  // (New papers that Linden isn't given yet: said so, after that.)
   if (TO_ADD !== null) offerAddPapers();
 }
 
@@ -529,7 +619,7 @@ if (RELOADING) {
     stage('Checking this browser for a saved copy');
     const cached = await Promise.race([cache.get(), new Promise(r => setTimeout(() => r(null), 3000))]);
     if (cached) {
-      // A saved copy means LibLande is set up: show Add and Settings now,
+      // A saved copy means Linden is set up: show Add and Settings now,
       // not after Google Drive answers (how adding works is remembered from
       // last time until then).
       $('#settingsBtn').hidden = false; $('#addBtn').hidden = false;
@@ -848,7 +938,7 @@ if (RELOADING) {
   });
   // On Pages: the .bib and the papers folder chosen in Google's picker
   // (with limited access, also the folders in it and the PDFs, which gives
-  // them to LibLande). (The choices go in the link boxes, hidden, as IDs.)
+  // them to Linden). (The choices go in the link boxes, hidden, as IDs.)
   const PICKED = { bibParent: '' };
   function pickMode(on, limited) {
     $('#linkInputs').hidden = on;
@@ -878,7 +968,7 @@ if (RELOADING) {
       const res = await callServer('pickFiles', opts);
       const d = res.docs[0];
       if (!d) {
-        if (res.missing.length) setupMsg('Google hasn\u2019t given LibLande \u201c' + res.missing[0].name + '\u201d yet. Choose it again in a moment.', 'error');
+        if (res.missing.length) setupMsg('Google hasn\u2019t given Linden \u201c' + res.missing[0].name + '\u201d yet. Choose it again in a moment.', 'error');
         return;
       }
       if (what === 'bib') {
@@ -916,7 +1006,7 @@ if (RELOADING) {
     const bibs = all.filter(f => /\.bib$/i.test(f.name)).sort((a, b) => path(a).split('/').length - path(b).split('/').length);
     if (!bibs.length) { setupMsg('There\u2019s no .bib file there. In Zotero, export to BibTeX.', 'error'); return; }
     const bib = bibs[0], dir = path(bib).split('/').slice(0, -1).join('/');
-    try { ZOT.text = await bib.text(); } catch (e) { setupMsg('LibLande couldn\u2019t read ' + bib.name + '.', 'error'); return; }
+    try { ZOT.text = await bib.text(); } catch (e) { setupMsg('Linden couldn\u2019t read ' + bib.name + '.', 'error'); return; }
     // (Paths from the .bib's folder, as its links have them.)
     ZOT.files = all.filter(f => !/\.bib$/i.test(f.name)).map(f => ({ path: dir && path(f).indexOf(dir + '/') === 0 ? path(f).slice(dir.length + 1) : path(f), file: f }));
     const n = (ZOT.text.match(/@(?!comment\b|string\b|preamble\b)\w+\s*\{/gi) || []).length;
@@ -1002,7 +1092,7 @@ if (RELOADING) {
       $('#signOutBtn').disabled = false;
       $('#curEmail').textContent = a.email || 'Google';
       $('#accessRow').hidden = false;
-      $('#curAccess').textContent = a.access === 'limited' ? 'Limited: the files you\u2019ve given LibLande' : 'Full';
+      $('#curAccess').textContent = a.access === 'limited' ? 'Limited: the files you\u2019ve given Linden' : 'Full';
       $('#accessFull').hidden = a.access !== 'limited';
       $('#adoptRow').hidden = a.access !== 'limited';
     }).catch(() => {});
@@ -1036,7 +1126,7 @@ if (RELOADING) {
     applyGlass(ev.target.checked);
     sendPrefs({ glass: ev.target.checked });
   });
-  // LibLande in Word: its installer, on a Mac (not an iPad or iPhone).
+  // Linden in Word: its installer, on a Mac (not an iPad or iPhone).
   $('#wordSec').hidden = !/Mac/.test(navigator.platform) || navigator.maxTouchPoints > 1;
   document.querySelectorAll('[data-word-copy]').forEach(b => b.addEventListener('click', () => copy(b.previousElementSibling.textContent, 'Copied: paste it in Go to Folder')));
   $('#coversBox').addEventListener('change', ev => { store.set('coversOn', ev.target.checked); sweepCovers(); renderDetail(); });
@@ -1053,7 +1143,7 @@ if (RELOADING) {
   });
   // Limited access: the LibLande folder used before (with full access),
   // with your settings, reading list and preferences, given in Google's
-  // picker and used from now on; then LibLande starts again with it.
+  // picker and used from now on; then Linden starts again with it.
   $('#adoptFirst').addEventListener('click', ev => { if (ev.target.closest('[data-adopt-first]')) $('#adoptBtn').click(); });
   $('#adoptBtn').addEventListener('click', async () => {
     const b = $('#adoptBtn');
@@ -1084,7 +1174,7 @@ if (RELOADING) {
   // Sign out of this device: asked first, in a dialog (Cancel has the
   // focus). Not while marks on a paper are still to reach Drive. Then the
   // sign-in, this device's settings, the saved library and the papers kept
-  // for offline are all forgotten here, and LibLande starts again.
+  // for offline are all forgotten here, and Linden starts again.
   $('#signOutBtn').addEventListener('click', () => { $('#signOutAsk').showModal(); $('#signOutNo').focus(); });
   $('#signOutNo').addEventListener('click', () => $('#signOutAsk').close());
   $('#signOutYes').addEventListener('click', async () => {
@@ -1094,7 +1184,7 @@ if (RELOADING) {
     try {
       const kept = ((await JOURNAL.run('readonly', st => st.getAllKeys()).catch(() => [])) || []).filter(id => typeof id === 'string' && !id.startsWith('open:'));
       if (V.dirty || V.bmDirty || V.saving || kept.length) {
-        throw new Error('Marks on ' + (kept.length > 1 ? kept.length + ' papers' : 'a paper') + ' haven\u2019t reached Google Drive yet. Open LibLande online and let them save, then sign out.');
+        throw new Error('Marks on ' + (kept.length > 1 ? kept.length + ' papers' : 'a paper') + ' haven\u2019t reached Google Drive yet. Open Linden online and let them save, then sign out.');
       }
       setupMsg('Signing out\u2026', 'status');
       await callServer('signOut');
@@ -1133,7 +1223,7 @@ if (RELOADING) {
       setupMsg(x.dataset.name + ' is off the list. To add it again, use a different .bib file and paste the link to its .bib.', 'status');
     } catch (err) { setupMsg(errText(err), 'error'); x.disabled = false; }
   }, true);
-  // Another library: a new, empty one, or one used before. LibLande builds
+  // Another library: a new, empty one, or one used before. Linden builds
   // it, as for new links, and opens it.
   // (From the sidebar, quiet: what's happening in a message at the foot.)
   let switching = false;
@@ -1153,7 +1243,7 @@ if (RELOADING) {
     const say = (m, kind) => (quiet ? (m ? toast(m, kind === 'error' ? 7000 : 0) : null) : setupMsg(m, kind));
     const btns = ['#setSave', '#setClose', '#setupGo', '#newLibGo', '#zotGo', '#zotPick', '#zotBibPick'].map(s => $(s)).concat([...$('#libOthers').querySelectorAll('button'), ...$('#setupWays').querySelectorAll('button')]);
     btns.forEach(b => { if (b) b.disabled = true; });
-    const msg = what + (call === 'createLibrary' ? '' : ' LibLande builds it, which can take a minute or two for a large library.');
+    const msg = what + (call === 'createLibrary' ? '' : ' Linden builds it, which can take a minute or two for a large library.');
     say(msg, 'status');
     foldLibSub(target);
     try {
@@ -1206,7 +1296,7 @@ if (RELOADING) {
     const b = ev.target.closest('[data-lib]');
     if (b) otherLibrary('switchLibrary', [b.dataset.lib, b.dataset.papers], 'Switching to ' + b.querySelector('b').textContent + '.', false, LIBS.list.find(l => l.bibId === b.dataset.lib));
   });
-  document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !$('#setup').hidden && !$('#setHead').hidden && !$('#signOutAsk').open) { ev.preventDefault(); closeSettings(); } });
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !$('#setup').hidden && !$('#setHead').hidden && !$('#signOutAsk').open && !$('#keepAsk').open) { ev.preventDefault(); closeSettings(); } });
   // With a saved copy, Settings shows before Google Drive has answered: wait
   // for the answer (or ask again, if it failed) rather than show the
   // first-time setup.

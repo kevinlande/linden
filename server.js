@@ -1,5 +1,5 @@
 ﻿/*
- * LibLande on GitHub Pages: its server, in the browser.
+ * Linden on GitHub Pages: its server, in the browser.
  *
  * The page (index.html) talks to its server through google.script.run, as
  * it did when Apps Script served it (until 2026-10-04; Code.gs is kept in
@@ -17,12 +17,12 @@
   window.LIBLANDE_PAGES = true;
   // (Which version each part of the app is from: index.html checks they
   // match. build.py fills it in.)
-  (window.LIBLANDE_PARTS = window.LIBLANDE_PARTS || {}).server = '2026-11-23.01';
+  (window.LIBLANDE_PARTS = window.LIBLANDE_PARTS || {}).server = '2026-11-24.01';
   const CLIENT_ID = '789682218462-98mjugngb46ttd01ucp9dcj71ufspjgn.apps.googleusercontent.com';
   // Google Drive, in one of two ways (docs/drive-file-plan.md):
   // full: all of Drive (your .bib, papers and LibLande folder wherever
-  //   they are); Google warns that LibLande isn't verified.
-  // limited: only files LibLande made and files picked in Google's picker;
+  //   they are); Google warns that Linden isn't verified.
+  // limited: only files Linden made and files picked in Google's picker;
   //   no warning.
   const SCOPES = { full: 'https://www.googleapis.com/auth/drive', limited: 'https://www.googleapis.com/auth/drive.file' };
   // Google's picker: the project's key (build.py fills it in from
@@ -68,7 +68,7 @@
     client = google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: scope(),
-      // (Limited: not the full access this account may have given LibLande
+      // (Limited: not the full access this account may have given Linden
       // before, only the limited one.)
       include_granted_scopes: access !== 'limited',
       callback: resp => {
@@ -92,7 +92,7 @@
   }
   // (Offline, Google's window can't open: it would only show Safari's
   // "not connected" page. Back online, a tap asks again.)
-  const OFFLINE_BAR = 'You\u2019re offline. LibLande will reconnect to Google Drive when you\u2019re back online.';
+  const OFFLINE_BAR = 'You\u2019re offline. Linden will reconnect to Google Drive when you\u2019re back online.';
   function ask() {
     if (!online()) { bar(OFFLINE_BAR); return; }
     // (Never signed in on this device: full or limited access first.)
@@ -124,7 +124,7 @@
     // be reached, and papers kept on this device answer instead).
     if (!online()) {
       if (token || store.get('token', null)) return Promise.resolve((token || store.get('token', null)).value);
-      return Promise.reject(new Error('You\u2019re offline, and LibLande hasn\u2019t signed in to Google on this device yet.'));
+      return Promise.reject(new Error('You\u2019re offline, and Linden hasn\u2019t signed in to Google on this device yet.'));
     }
     return new Promise(resolve => {
       waiters.push(resolve);
@@ -198,7 +198,7 @@
   function chooser() {
     if (chooserEl) { chooserEl.hidden = false; return; }
     bar(null);
-    // (Its look in app/style.css, as the rest of LibLande: the theme's
+    // (Its look in app/style.css, as the rest of Linden: the theme's
     // colours, light or dark.)
     chooserEl = document.createElement('div');
     chooserEl.id = 'pagesAccess';
@@ -209,8 +209,8 @@
     const opt = (key, title, sub, who) => '<button type="button" class="access-opt" data-access="' + key + '"><b>' + title + '</b><span>' + sub + '</span><span class="access-for">' + who + '</span></button>';
     chooserEl.innerHTML = '<div class="access-card" tabindex="-1">' +
       '<b class="access-title" id="accessTitle">Sign in with Google</b>' +
-      '<p>LibLande keeps your references and their PDFs in your own Google Drive. How much of it may LibLande reach?</p>' +
-      opt('full', 'Full access', 'LibLande finds your PDFs itself. Google will warn that LibLande isn\u2019t verified.', 'For an existing BibDesk library') +
+      '<p>Linden keeps your references and their PDFs in your own Google Drive. How much of it may Linden reach?</p>' +
+      opt('full', 'Full access', 'Linden finds your PDFs itself. Google will warn that Linden isn\u2019t verified.', 'For an existing BibDesk library') +
       opt('limited', 'Limited access', 'Only the files you choose: your .bib and its PDFs, picked once.', 'For a new library, or one from Zotero') +
       '<div class="access-links"><a href="start.html" target="_blank" rel="noopener">Getting started</a><a href="privacy.html#access" target="_blank" rel="noopener">What each allows</a></div>' +
       '</div>';
@@ -238,7 +238,7 @@
 
   /* ------------------------------------------------------------ Google's picker */
   // Picking files or folders in Google's own picker: with limited access,
-  // how LibLande is given them. what: 'bib' (one .bib), 'pdfs' (several
+  // how Linden is given them. what: 'bib' (one .bib), 'pdfs' (several
   // PDFs), 'folders' (several folders), 'folder' (one), 'files' (several
   // of any kind), 'all' (files and folders). parent: a folder to start in. query: a search to start
   // with. Answers [{id, name, mimeType}], or [] if cancelled.
@@ -255,7 +255,7 @@
     }).catch(e => { pickerReady = null; throw e; }));
   }
   async function pick(opts = {}) {
-    if (!PICKER_KEY || PICKER_KEY.indexOf('__') === 0) throw new Error('Google\u2019s picker isn\u2019t set up in this copy of LibLande.');
+    if (!PICKER_KEY || PICKER_KEY.indexOf('__') === 0) throw new Error('Google\u2019s picker isn\u2019t set up in this copy of Linden.');
     const what = opts.what || 'files';
     const [t] = await Promise.all([getToken(), loadPicker()]);
     const P = window.google.picker;
@@ -286,7 +286,7 @@
       pb.build().setVisible(true);
     });
   }
-  // Files just picked can take a moment to be LibLande's: each one not
+  // Files just picked can take a moment to be Linden's: each one not
   // found is tried again, for up to half a minute. Answers {ok, missing}
   // (ids).
   async function settle(ids) {
@@ -311,7 +311,7 @@
 
   /* ------------------------------------------------------------ Drive */
   // (A request with no answer is given up after a while: on an iPad, one
-  // under way when LibLande goes to the background can be left with none,
+  // under way when Linden goes to the background can be left with none,
   // ever, and changes to the .bib wait their turn behind it.)
   const STALL = 45 * 1000, STALL_SENDING = 5 * 60 * 1000, STALL_READING = 5 * 60 * 1000;
   const DRIVE_WAITS = [500, 2000, 5000];
@@ -381,7 +381,7 @@
     const raw = await textOf(f.id);
     try { return JSON.parse(raw); } catch (e) { return null; }
   }
-  // LibLande's folder in My Drive: as the builder finds it (the same one
+  // Linden's folder in My Drive: as the builder finds it (the same one
   // for preferences and PDF backups here as for .bib backups and the
   // inbox there).
   const dataFolder = () => builder.dataFolder();
@@ -448,17 +448,17 @@
     // Full or limited access to Google Drive, on this device (see above).
     getAccess() { return { access: access || 'full', email }; },
     setAccess(mode) { setAccess(mode); return { access }; },
-    // Google's picker, then waiting for what was picked to be LibLande's.
+    // Google's picker, then waiting for what was picked to be Linden's.
     async pickFiles(opts) {
       const docs = await pick(opts);
       if (!docs.length || opts.settle === false) return { docs, missing: [] };
       const s = await settle(docs.map(d => d.id));
       return { docs: docs.filter(d => s.ok.includes(d.id)), missing: docs.filter(d => s.missing.includes(d.id)) };
     },
-    // With limited access: PDFs given to LibLande in Google's picker, then
+    // With limited access: PDFs given to Linden in Google's picker, then
     // the papers folder listed again (a build) so they're linked. The page
     // waits for the build, as for any other.
-    // opts.folders: folders the .bib names that LibLande can't see (from
+    // opts.folders: folders the .bib names that Linden can't see (from
     // the build), asked for first.
     async addPapers(opts) {
       const want = (opts && opts.folders) || [];
@@ -479,15 +479,15 @@
       return { added: docs.length, folders: folders.length };
     },
     // Limited access: the LibLande folder used before (settings, reading
-    // list, preferences, backups) given to LibLande and used from now on.
+    // list, preferences, backups) given to Linden and used from now on.
     // The folder, then everything in it, then what's in its Inbox. Answers
     // {adopted}; the page then reloads.
     async adoptDataFolder() {
-      // (The ones LibLande sees already are those it made itself.)
-      const mine = new Set((await storage().children(storage().root, { name: DATA_FOLDER, folders: true, fields: 'id' })).map(f => f.id));
+      // (The ones Linden sees already are those it made itself.)
+      const mine = new Set([].concat(...await Promise.all(['Linden', DATA_FOLDER].map(name => storage().children(storage().root, { name, folders: true, fields: 'id' })))).map(f => f.id));
       const [folder] = await pick({ what: 'folder', query: DATA_FOLDER, title: 'Select your earlier LibLande folder (My Drive \u203a LibLande, with Backups, Inbox and Exports in it), then Select' });
       if (!folder) return { adopted: false };
-      if (folder.name !== DATA_FOLDER) throw new Error('That folder is \u201c' + folder.name + '\u201d. Choose the one named LibLande, in My Drive.');
+      if (folder.name !== DATA_FOLDER && folder.name !== 'Linden') throw new Error('That folder is \u201c' + folder.name + '\u201d. Choose the one named LibLande (or Linden), in My Drive.');   // keep-name
       if (mine.has(folder.id)) throw new Error('That\u2019s the LibLande folder made with limited access. Choose the other one named LibLande, the earlier one.');
       const inside = await pick({ what: 'all', parent: folder.id, title: 'Select everything in it (\u2318A), then Select' });
       if (!inside.length) return { adopted: false };
@@ -495,7 +495,7 @@
       const more = inbox ? await pick({ what: 'all', parent: inbox.id, title: 'And everything in Inbox (\u2318A), then Select' }) : [];
       await settle([folder.id].concat(inside.map(f => f.id), more.map(f => f.id)));
       const r = await builder.adoptDataFolder(folder.id);
-      if (!r.ok) throw new Error('LibLande can\u2019t see the library or settings in that folder. Choose it again, and select everything in it (\u2318A).');
+      if (!r.ok) throw new Error('Linden can\u2019t see the library or settings in that folder. Choose it again, and select everything in it (\u2318A).');
       return { adopted: true, renamed: r.renamed };
     },
     async getPrefs() { prefsMemo = null; return loadPrefs(null); },
@@ -539,7 +539,7 @@
       if (!bibId) throw new Error('Paste the link to your .bib file. In Google Drive, right-click the file and choose Share, then Copy link.');
       let bib;
       try { bib = await builder.meta(bibId, 'id,name,parents,trashed'); } catch (e) {
-        throw new Error('LibLande couldn\u2019t open that file. Check that the link is to a file you can open in Google Drive.');
+        throw new Error('Linden couldn\u2019t open that file. Check that the link is to a file you can open in Google Drive.');
       }
       if (!/\.bib$/i.test(bib.name)) throw new Error('\u201c' + bib.name + '\u201d isn\u2019t a .bib file. Choose your BibTeX library.');
       let papersId = '';
@@ -547,9 +547,9 @@
         papersId = idFromLink(papersLink);
         let ok = false;
         try { ok = !!papersId && (await builder.meta(papersId, 'mimeType')).mimeType === FOLDER; } catch (e) { ok = false; }
-        if (!ok) throw new Error('LibLande couldn\u2019t open that papers folder. Choose a folder, or leave it out.');
+        if (!ok) throw new Error('Linden couldn\u2019t open that papers folder. Choose a folder, or leave it out.');
       } else if (!(bib.parents && bib.parents[0])) {
-        throw new Error('LibLande can\u2019t see the folder that holds this .bib file. Choose your papers folder too.');
+        throw new Error('Linden can\u2019t see the folder that holds this .bib file. Choose your papers folder too.');
       }
       await edits.useLibrary({ bibId, papersId });
       lastBuilt = null; window.LIBLANDE_BUILT = null;
@@ -601,8 +601,8 @@
     async forgetLibrary(bibId) { await edits.forgetLibrary({ bibId }); return SERVER.getStatus(); },
     async switchLibrary(bibId, papersId) {
       try { await edits.useLibrary({ bibId, papersId }); } catch (e) {
-        // (Limited access: a library whose .bib LibLande wasn't given.)
-        if (access === 'limited' && (e.status === 404 || e.status === 403)) throw new Error('LibLande hasn\u2019t been given that library\u2019s .bib. Add it with Add an existing library, in Settings \u203a Library.');
+        // (Limited access: a library whose .bib Linden wasn't given.)
+        if (access === 'limited' && (e.status === 404 || e.status === 403)) throw new Error('Linden hasn\u2019t been given that library\u2019s .bib. Add it with Add an existing library, in Settings \u203a Library.');
         throw e;
       }
       lastBuilt = null; window.LIBLANDE_BUILT = null;
@@ -628,7 +628,7 @@
     // references.rtf; the page then adds the PDFs (as Code.gs's).
     async createExport(req) {
       const exportsFolder = await subFolder(await dataFolder(), 'Exports', true);
-      const base = String(req.name || '').replace(/[\/\\:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim() || 'LibLande export ' + day();
+      const base = String(req.name || '').replace(/[\/\\:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim() || 'Linden export ' + day();
       let name = base, n = 2;
       while (await builder.named(exportsFolder.id, name, 'id', true)) name = base + ' (' + n++ + ')';
       const folder = await storage().mkdir(exportsFolder.id, name);
@@ -672,7 +672,7 @@
       const name = day() + ' ' + file.name.replace(/[.]pdf$/i, '') + ' (' + fileId.slice(-6) + ').pdf';
       if (!(await fileIn(folder.id, name))) {
         const copy = await storage().copy(fileId, folder.id, name, 'id,size');
-        if (!copy || copy.size !== file.size) throw new Error('LibLande couldn’t make a backup copy of the PDF, so it didn’t save your markup.');
+        if (!copy || copy.size !== file.size) throw new Error('Linden couldn’t make a backup copy of the PDF, so it didn’t save your markup.');
       }
       if (store.get('pdfBackupsPruned', '') !== day()) {
         const cutoff = new Date(Date.now() - PDF_BACKUP_DAYS * 24 * 60 * 60 * 1000).toISOString();
@@ -700,7 +700,7 @@
     },
   };
   // Anything else the page asks for isn't in this version.
-  const missing = name => () => Promise.reject(new Error('LibLande on GitHub Pages can\u2019t do this (' + name + ').'));
+  const missing = name => () => Promise.reject(new Error('Linden on GitHub Pages can\u2019t do this (' + name + ').'));
   // A Drive file or folder ID from a pasted link, or a bare ID (as
   // Code.gs's idFromLink_).
   function idFromLink(s) {
@@ -716,7 +716,7 @@
   // page shows them (index.html's overlayOffline reads
   // window.liblandeOutbox), and asks with the answers given here: what the
   // reading list comes to with them.
-  // (Kept in this browser's storage, shared by every LibLande tab, and
+  // (Kept in this browser's storage, shared by every Linden tab, and
   // read from it afresh before each use: two tabs open don't each keep a
   // copy of their own and write over the other's.)
   let outbox = store.get('outbox', []);
@@ -760,7 +760,7 @@
     // (Not kept: this device's storage is full. Said, not left to seem saved.)
     if (!store.get('outbox', []).some(x => x.id === outbox[outbox.length - 1].id)) {
       freshOutbox();
-      const e = new Error('This device\u2019s storage for LibLande is full, so the change couldn\u2019t be kept to send later. Connect to the internet and try again.');
+      const e = new Error('This device\u2019s storage for Linden is full, so the change couldn\u2019t be kept to send later. Connect to the internet and try again.');
       e.storageFull = true;
       throw e;
     }
@@ -876,7 +876,7 @@
   window.addEventListener('online', () => setTimeout(() => { flushOutbox().catch(() => {}); }, 1500));
   // (For the tests.)
   window.liblandeFlushOutbox = () => flushOutbox();
-  // (Safari often doesn't say it's back online, as when LibLande comes
+  // (Safari often doesn't say it's back online, as when Linden comes
   // back to the screen with a connection already: so also then, and every
   // half minute while changes wait, with the page on screen.)
   const flushSoon = () => { if (freshOutbox().length && online() && !document.hidden && Date.now() >= laterAt) flushOutbox().catch(() => {}); };
@@ -887,7 +887,7 @@
 
   /* ------------------------------------------------------------ preferences */
   // LibLande/prefs.json; the first time, those in settings.json (copied
-  // from Apps Script's when LibLande moved). Changes are gathered for a moment, then written onto a
+  // from Apps Script's when Linden moved). Changes are gathered for a moment, then written onto a
   // fresh copy of the file, so another device's changes to other
   // preferences aren't lost.
   const PREFS_FILE = 'prefs.json', MARKS_FILE = 'marks.json';
@@ -984,7 +984,7 @@
   }
 
   /* ------------------------------------------------------------ DOI lookup */
-  // (lookup.js: shared with LibLande for Word.)
+  // (lookup.js: shared with Linden for Word.)
   const lookupDoi = input => window.liblandeLookup.lookupDoi(input);
 
   /* ------------------------------------------------------------ building */
@@ -1005,7 +1005,7 @@
         // the library it was just sent to Drive.
         if (r && r.built) { lastBuilt = r; window.LIBLANDE_BUILT = { id: r.id, stamp: r.stamp, gz: r.gz }; }
       })
-      .catch(e => { buildErr = (e && e.message) || String(e); console.warn('LibLande build:', buildErr); })
+      .catch(e => { buildErr = (e && e.message) || String(e); console.warn('Linden build:', buildErr); })
       .finally(() => { buildRun = null; });
     return true;
   }
@@ -1021,7 +1021,7 @@
       return (...args) => {
         Promise.resolve().then(() => fn(...args)).then(v => ok && ok(v), e => {
           if (fail) fail(e instanceof Error ? e : new Error(String(e)));
-          else console.warn('LibLande (' + k + '):', e);
+          else console.warn('Linden (' + k + '):', e);
         });
       };
     },
@@ -1040,7 +1040,7 @@
 
   /* ------------------------------------------------------------ offline */
   // sw.js keeps the app, PDF.js and recently opened papers on this device,
-  // so LibLande opens (and opens those papers) with no connection. Storage
+  // so Linden opens (and opens those papers) with no connection. Storage
   // marked persistent isn't cleared by Safari to make room.
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     // A new version: looked for on opening and on coming back to the

@@ -1,8 +1,8 @@
-﻿// LibLande: Link chapters to books: chapters already in the library linked to their books (crossref), and books added for chapters that have none.
+﻿// Linden: Link chapters to books: chapters already in the library linked to their books (crossref), and books added for chapters that have none.
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/chapters.js'] = '2026-11-23.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/chapters.js'] = '2026-11-24.01';
 /* ------------------------------------------------------------ link chapters */
 // A chapter is linked to its book by its crossref field (see findChapters).
 // Chapters added before that are linked here, after you've looked:
@@ -268,7 +268,7 @@ async function saveLinkChapters() {
     const skipped = res.skipped || [];
     const added = adds.filter(a => res.hashes[a.key]);
     toast('Linked ' + done.length + ' chapter' + (done.length === 1 ? '' : 's') + ' to their books' + (added.length ? ', and added ' + added.length + ' book' + (added.length === 1 ? '' : 's') : '') +
-      (skipped.length ? '; ' + skipped.length + ' left as they were (changed elsewhere since LibLande read them)' : '') + '.', 10000,
+      (skipped.length ? '; ' + skipped.length + ' left as they were (changed elsewhere since Linden read them)' : '') + '.', 10000,
       { label: 'Undo', run: () => undoLinkChapters(undo.filter(u => res.hashes[u.c.k]), added.map(a => ({ key: a.key, expectHash: res.hashes[a.key] })), res.hashes) });
   } catch (err) {
     if (sheet === s) sheetMsg(errText(err), true);

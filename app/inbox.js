@@ -1,14 +1,14 @@
-﻿// LibLande: the Inbox: works you're considering, kept apart from your library until you add them (or let them go).
+﻿// Linden: the Inbox: works you're considering, kept apart from your library until you add them (or let them go).
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/inbox.js'] = '2026-11-23.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/inbox.js'] = '2026-11-24.01';
 /* ------------------------------------------------------------ the Inbox */
 // Works you came across (cited in a paper you're reading, say) and want to
 // look at before deciding to keep them: their details, where you found
 // them, and their PDF if you get one, kept in LibLande/inbox.json and
 // LibLande/Inbox/Papers in Drive, never in the .bib. Add to library puts
-// one in (with its PDF); Remove lets it go, and LibLande remembers you
+// one in (with its PDF); Remove lets it go, and Linden remembers you
 // passed on it. Shown in the library in the Reading list's tab (its arrow
 // switches between the two), and in the reader's new tab.
 // An item: { id, at (last changed), added, title, people ["Family, Given"],
@@ -333,7 +333,7 @@ $('#ibAttachInput').addEventListener('change', ev => {
   IB_ATTACH.x = null;
   if (file && x) ibAttach(x, file);
 });
-// Let go (with Undo for a moment): its PDF to Drive's trash, and LibLande
+// Let go (with Undo for a moment): its PDF to Drive's trash, and Linden
 // remembers you passed on it.
 function ibRemove(x, quiet) {
   const before = Object.assign({}, x);

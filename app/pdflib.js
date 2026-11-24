@@ -1,8 +1,8 @@
-﻿// LibLande: pdf-lib: loading it, clean copies without marks, and rebuilding a damaged PDF.
+﻿// Linden: pdf-lib: loading it, clean copies without marks, and rebuilding a damaged PDF.
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/pdflib.js'] = '2026-11-23.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/pdflib.js'] = '2026-11-24.01';
 // Clean copies: the same PDF with markup annotations (highlights, pen
 // marks, notes, shapes) removed, using pdf-lib. Links and form fields stay.
 // Marks that an app has flattened into the page itself can't be removed.
@@ -16,7 +16,7 @@ function loadPdfLib() {
       const s = document.createElement('script');
       s.src = PDFLIB;
       s.onload = () => resolve(window.PDFLib);
-      s.onerror = () => reject(new Error('A PDF tool LibLande needs (pdf-lib) couldn\u2019t load. Check your connection.'));
+      s.onerror = () => reject(new Error('A PDF tool Linden needs (pdf-lib) couldn\u2019t load. Check your connection.'));
       document.head.appendChild(s);
     });
     pdfLibReady.catch(() => { pdfLibReady = null; });
@@ -32,13 +32,13 @@ async function cleanPdf(bytes) {
     doc = await open(bytes);
   } catch (err) {
     if (/encrypt/i.test(String(err && err.message))) {
-      throw new Error('This PDF is password-protected, so LibLande can\u2019t make a clean copy of it.');
+      throw new Error('This PDF is password-protected, so Linden can\u2019t make a clean copy of it.');
     }
     // A damaged file: rebuild it from its objects and try again.
     try {
       doc = await open(rebuildPdf(bytes));
     } catch (err2) {
-      throw new Error('LibLande couldn\u2019t read this PDF to make a clean copy. Its file structure may be damaged.');
+      throw new Error('Linden couldn\u2019t read this PDF to make a clean copy. Its file structure may be damaged.');
     }
   }
   const ctx = doc.context;
@@ -83,8 +83,8 @@ async function pagesPdf(bytes, from, to) {
   try {
     src = await open(bytes);
   } catch (err) {
-    if (/encrypt/i.test(String(err && err.message))) throw new Error('This PDF is password-protected, so LibLande can\u2019t take pages out of it.');
-    try { src = await open(rebuildPdf(bytes)); } catch (err2) { throw new Error('LibLande couldn\u2019t read this PDF to take pages out of it. Its file structure may be damaged.'); }
+    if (/encrypt/i.test(String(err && err.message))) throw new Error('This PDF is password-protected, so Linden can\u2019t take pages out of it.');
+    try { src = await open(rebuildPdf(bytes)); } catch (err2) { throw new Error('Linden couldn\u2019t read this PDF to take pages out of it. Its file structure may be damaged.'); }
   }
   const N = src.getPageCount();
   from = Math.max(1, Math.min(N, from)); to = Math.max(from, Math.min(N, to));

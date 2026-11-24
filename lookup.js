@@ -1,7 +1,7 @@
-/* LibLande: a publication's details, as BibTeX fields, for a DOI (from
+/* Linden: a publication's details, as BibTeX fields, for a DOI (from
  * Crossref, or DataCite for one Crossref doesn't have), an arXiv ID or
  * link (arXiv's DOI for it), or an ISBN (from Open Library). Used by
- * server.js (Add's lookup) and by LibLande for Word (adding a work found
+ * server.js (Add's lookup) and by Linden for Word (adding a work found
  * online). liblandeLookup.lookupDoi(input) answers {type, fields, source},
  * or throws with why.
  */

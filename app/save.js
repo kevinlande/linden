@@ -1,8 +1,8 @@
-﻿// LibLande: saving the marks: to Google Drive (checked first), kept on this device between uploads, and auto-save.
+﻿// Linden: saving the marks: to Google Drive (checked first), kept on this device between uploads, and auto-save.
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/save.js'] = '2026-11-23.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/save.js'] = '2026-11-24.01';
 /* ---- saving markup */
 // A new mark isn't in the PDF's annotations until PDF.js commits it (on a
 // change of tool), so anything done with a tool counts as possibly
@@ -82,7 +82,7 @@ window.addEventListener('keydown', ev => {
 // The PDF with its new annotations goes back into the same Google Drive
 // file (so its link in the .bib stays the same), after the old version is
 // copied to LibLande/Backups/PDFs. If the file changed elsewhere
-// since it was opened (in PDF Expert, say), LibLande asks first.
+// since it was opened (in PDF Expert, say), Linden asks first.
 // Commit a mark being drawn. With the pen (or eraser) on, PDF.js can end
 // the drawing in place, staying in ink mode; otherwise switch PDF.js to no
 // tool, then back. (Switching resets every page's drawing layer, so a
@@ -201,7 +201,7 @@ async function saveMarkup(force, auto, now) {
       if (!AUTO.first) AUTO.first = AUTO.last = Date.now();
       saveUI();
       if (auto) {
-        if (!AUTO.failed) toast('Couldn\u2019t save your changes just now (' + errText(err) + '). LibLande will keep trying.', 5000);
+        if (!AUTO.failed) toast('Couldn\u2019t save your changes just now (' + errText(err) + '). Linden will keep trying.', 5000);
         AUTO.failed = true;
         return false;
       }
@@ -238,7 +238,7 @@ const keptNote = r => { if (r === 'kept') toast(KEPT_NOTE, 4500); return r; };
 // already in the PDF and were changed or deleted here aren't carried over
 // (the other version may have changed them too); you're told how many.
 // Papers with changes kept on this device (made offline, or left before
-// they could be uploaded) go to Drive when LibLande is online: on start,
+// they could be uploaded) go to Drive when Linden is online: on start,
 // and when the connection comes back. Each only if the PDF on Drive is
 // still the one the changes were made to; otherwise it's left, and
 // opening it offers Combine.
@@ -393,7 +393,7 @@ async function pdfLibOpen(bytes) {
     return await open(bytes);
   } catch (err) {
     if (/encrypt/i.test(String(err && err.message))) throw new Error('this PDF is password-protected.');
-    try { return await open(rebuildPdf(bytes)); } catch (err2) { throw new Error('LibLande couldn\u2019t read the PDF\u2019s file structure.'); }
+    try { return await open(rebuildPdf(bytes)); } catch (err2) { throw new Error('Linden couldn\u2019t read the PDF\u2019s file structure.'); }
   }
 }
 
@@ -641,7 +641,7 @@ function watchChanges(ui) {
 // the paper), but not while you're in the middle of a stroke, the comment
 // box or typing. Only changes count: reading and scrolling don't put it off. (Each upload rebuilds the whole PDF and sends it, which costs
 // battery; meanwhile they're kept on this device, see JOURNAL.) If the PDF changed
-// elsewhere, LibLande asks first and waits.
+// elsewhere, Linden asks first and waits.
 const AUTO = { timer: 0, down: false, paused: false, failed: false, backedUp: '', first: 0, last: 0 };
 const AUTO_QUIET = 2 * 60 * 1000, AUTO_MOST = 5 * 60 * 1000;
 // A big PDF (a scanned book, say) is sent whole each time, which is slow

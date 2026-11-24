@@ -1,19 +1,19 @@
-﻿// LibLande: Split pages: a scan of an open book, two pages to each page of the PDF, made one page each.
+﻿// Linden: Split pages: a scan of an open book, two pages to each page of the PDF, made one page each.
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/split.js'] = '2026-11-23.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/split.js'] = '2026-11-24.01';
 /* ---------------------------------------------------------- split pages */
 // From a page's thumbnail (Split), or all the wide pages at once (Split
 // all). A dashed line shows where the page will be cut, at the fold
-// LibLande finds (the band down the middle with no lines of print); drag
+// Linden finds (the band down the middle with no lines of print); drag
 // it if it's not quite there. Each page becomes two, in the PDF itself:
 // both show the same picture, each cut down to its half (so nothing is
 // lost, and other apps show them so too). Marks go with the half they're
 // on. Split all cuts each wide page at its own fold, and leaves pages that
 // aren't wide (a cover, say) as they are. Saved to Google Drive like
 // rotation (rewritePdf), and you stay on the page you were reading.
-// (Words in a page's text, as from OCR, stay in the whole page: LibLande
+// (Words in a page's text, as from OCR, stay in the whole page: Linden
 // leaves out those outside each half, but other apps may find them on
 // both. Best split a scan before making it searchable.)
 const SPLIT = { n: 0, all: false, at: 0.5, busy: false, token: 0 };

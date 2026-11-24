@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LibLande</title>
+<title>Linden</title>
 <script>
 // (In Google Docs, always light, as Docs is.)
 if (/[?&]host=gdocs\b/.test(location.search)) document.documentElement.classList.add('gdocs');
@@ -216,20 +216,20 @@ if (/[?&]host=gdocs\b/.test(location.search)) document.documentElement.classList
 </style>
 
 <header class="ph">
-  <img class="logo" src="icons/icon-32.png" alt="" width="20" height="20"><b>LibLande</b>
+  <img class="logo" src="icons/icon-32.png" alt="" width="20" height="20"><b>Linden</b>
   <span class="pill" id="offline" hidden>Offline</span>
   <button class="hbtn" id="refresh" type="button" title="Refresh library and citations" aria-label="Refresh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg></button>
   <button class="acct" id="acct" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Account" hidden>?</button>
   <div class="menu" id="menu" role="menu" hidden>
     <div class="who" id="menuWho"></div>
     <button type="button" role="menuitem" id="mReload">Reload library</button>
-    <button type="button" role="menuitem" id="mOpen">Open LibLande</button>
+    <button type="button" role="menuitem" id="mOpen">Open Linden</button>
     <button type="button" role="menuitem" id="mOut">Sign out</button>
   </div>
 </header>
 
 <div class="view" id="vSignin" hidden>
-  <div class="body"><div class="empty">Sign in to Google to use your library.<br><button class="btn primary" id="signin" type="button">Sign in</button><span id="signinPick" hidden><br>With the access you chose in LibLande:<br><button class="btn primary" data-access="limited" type="button">Limited access</button> <button class="btn" data-access="full" type="button">Full access</button></span><div class="note" id="signinNote" style="margin-top:10px"></div></div></div>
+  <div class="body"><div class="empty">Sign in to Google to use your library.<br><button class="btn primary" id="signin" type="button">Sign in</button><span id="signinPick" hidden><br>With the access you chose in Linden:<br><button class="btn primary" data-access="limited" type="button">Limited access</button> <button class="btn" data-access="full" type="button">Full access</button></span><div class="note" id="signinNote" style="margin-top:10px"></div></div></div>
 </div>
 
 <div class="view" id="vMain" hidden>
@@ -293,7 +293,7 @@ if (/[?&]host=gdocs\b/.test(location.search)) document.documentElement.classList
         <h4>Zotero citations</h4>
         <div class="line"><b id="zCount"></b></div>
         <div id="zRows"></div>
-        <div class="btns" style="margin-top:8px"><button class="btn primary grow" id="zConvert" type="button" hidden>Convert to LibLande</button></div>
+        <div class="btns" style="margin-top:8px"><button class="btn primary grow" id="zConvert" type="button" hidden>Convert to Linden</button></div>
       </div>
       <div class="card" id="plainCard" hidden>
         <h4>Make plain</h4>
@@ -332,7 +332,7 @@ if (/[?&]host=gdocs\b/.test(location.search)) document.documentElement.classList
 if (!/[?&]host=gdocs\b/.test(location.search)) document.write('<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"><\/script>');
 </script>
 <script>
-// What app/apa.js uses from the rest of LibLande, here on its own.
+// What app/apa.js uses from the rest of Linden, here on its own.
 var ENTRIES = [];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const safeUrl = u => /^https?:[/][/]/i.test(u) ? u : null;
@@ -347,10 +347,10 @@ const NP_OA = 'https://api.openalex.org';
 const npFetch = (u, o) => fetch(u, o);
 const npDoi = d => String(d || '').trim().replace(/^https?:\/\/(dx\.)?doi\.org\//i, '').replace(/^doi:\s*/i, '').toLowerCase();
 </script>
-<script src="../app/apa.js?v=2026-11-23.01"></script>
-<script src="../app/csl.js?v=2026-11-23.01"></script>
-<script src="../app/marks.js?v=2026-11-23.01"></script>
-<script src="../app/titlesearch.js?v=2026-11-23.01"></script>
-<script src="../lookup.js?v=2026-11-23.01"></script>
-<script src="engine.js?v=2026-11-23.01"></script>
-<script src="panel.js?v=2026-11-23.01"></script>
+<script src="../app/apa.js?v=2026-11-24.01"></script>
+<script src="../app/csl.js?v=2026-11-24.01"></script>
+<script src="../app/marks.js?v=2026-11-24.01"></script>
+<script src="../app/titlesearch.js?v=2026-11-24.01"></script>
+<script src="../lookup.js?v=2026-11-24.01"></script>
+<script src="engine.js?v=2026-11-24.01"></script>
+<script src="panel.js?v=2026-11-24.01"></script>
