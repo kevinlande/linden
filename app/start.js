@@ -2,7 +2,7 @@
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/start.js'] = '2026-11-25.03';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/start.js'] = '2026-11-25.04';
 // On GitHub Pages, every part of the app must be from the same version: a
 // part kept from an older one (the offline copy, served when the network
 // was slow) lacks what this page needs. Then the kept copies go, and the
@@ -217,7 +217,7 @@ async function keepShow() {
   $('#keepClear').disabled = !k.n;
   $('#keepTab').hidden = installedApp();
   $('#keepListsNow').hidden = !k.lists.n;
-  $('#keepListsNow').innerHTML = `<span><b>${k.lists.n.toLocaleString()} ${k.lists.n === 1 ? 'paper' : 'papers'}</b>, ${sizeText(k.lists.bytes)}, kept for lists (not counted in the limit)</span>`;
+  $('#keepListsNow').innerHTML = `<span><b>${k.lists.n.toLocaleString()} ${k.lists.n === 1 ? 'paper' : 'papers'}</b>, ${sizeText(k.lists.bytes)}, kept for ${KL.lists.all ? 'the whole library' : 'lists'} (not counted in the limit)</span>`;
   klRender(k);
 }
 // (On Pages, where sw.js keeps papers; and on the test page.)
@@ -272,7 +272,8 @@ if ((window.LIBLANDE_PAGES || window.LIBLANDE_TEST) && window.caches && $('#keep
 // downloaded ahead (one at a time, while the app's open, in front and
 // online), ones added later too. The papers' ids are written for sw.js at
 // PIN_KEY: not counted in the limit, never let go for it. A list over 200
-// papers or about 2 GB is asked about first.
+// papers or about 2 GB is asked about first. Or the whole library
+// (KL.lists.all): every paper, the Reading list's and the groups' first.
 const PIN_KEY = 'https:\/\/www.googleapis.com/drive/v3/files/__pinned__';
 const KL = { lists: store.get('offlineLists', { rl: false, groups: [] }), running: false, again: false, done: 0, total: 0, failed: 0, t: 0, note: '',
   // (Papers that couldn't be downloaded: not tried again for a day.)
@@ -291,13 +292,21 @@ function klFiles(id) {
   for (const e of groupItems(id) || []) if (!e.ib) for (const f of readablePdfs(e)) out.push(f);
   return out;
 }
+// Every paper in the library (not the Inbox's), each file once.
+function klAllFiles() {
+  const seen = new Set(), out = [];
+  for (const e of ENTRIES) if (!e.ib) for (const f of readablePdfs(e)) if (!seen.has(f.id)) { seen.add(f.id); out.push(f); }
+  return out;
+}
 function klTargets() {
   const seen = new Set(), out = [];
   const add = f => { if (!seen.has(f.id)) { seen.add(f.id); out.push(f); } };
-  if (KL.lists.rl) klFiles('toread').forEach(add);
+  if (KL.lists.rl || KL.lists.all) klFiles('toread').forEach(add);
   KL.lists.groups.forEach(id => klFiles(id).forEach(add));
+  if (KL.lists.all) klAllFiles().forEach(add);
   return out;
 }
+const klAny = () => !!(KL.lists.all || KL.lists.rl || KL.lists.groups.length);
 // (About how much: the average of what's kept here, or 3 MB a paper.)
 const klAvg = k => (k && (k.n + k.lists.n) ? (k.bytes + k.lists.bytes) / (k.n + k.lists.n) : 3e6);
 const klAbout = (n, k) => n.toLocaleString() + ' ' + (n === 1 ? 'paper' : 'papers') + ', about ' + sizeText(n * klAvg(k));
@@ -305,6 +314,11 @@ function klRender(k) {
   const rl = $('#keepRl');
   if (!rl) return;
   rl.checked = !!KL.lists.rl;
+  $('#keepAll').checked = !!KL.lists.all;
+  $('#keepAllHint').textContent = 'Every paper in it, downloaded ahead; ones you add later too. ' + klAbout(klAllFiles().length, k) + '.';
+  // (With the whole library kept, the lists are in it: their choices kept
+  // for when it's turned off.)
+  $('.keep-lists').classList.toggle('all', !!KL.lists.all);
   $('#keepRlHint').textContent = 'Every paper on it, downloaded ahead; ones you add later too. ' + klAbout(klFiles('toread').length, k) + '.';
   const have = new Set(klGroups());
   $('#keepGroups').innerHTML = KL.lists.groups.filter(id => have.has(id)).map(id => `<label class="keep-grp"><span class="set-text"><span class="nm">${esc(groupName(id))}</span><span class="hint">${esc(klAbout(klFiles(id).length, k))}</span></span>` +
@@ -401,12 +415,25 @@ async function klFetch(c, f) {
 // (Looked at again: soon after the start, every ten minutes, back online,
 // back in front.)
 if ((window.LIBLANDE_PAGES || window.LIBLANDE_TEST) && window.caches) {
-  const later = ms => { clearTimeout(KL.t); KL.t = setTimeout(() => { if (KL.lists.rl || KL.lists.groups.length) klSync(); }, ms); };
+  const later = ms => { clearTimeout(KL.t); KL.t = setTimeout(() => { if (klAny()) klSync(); }, ms); };
   later(15000);
   setInterval(() => later(0), 10 * 60 * 1000);
   window.addEventListener('online', () => later(3000));
   document.addEventListener('visibilitychange', () => { if (!document.hidden) later(3000); });
   $('#keepRl').addEventListener('change', ev => klChange(() => { KL.lists.rl = ev.target.checked; }));
+  // The whole library: asked about first, with its size and the room here.
+  $('#keepAll').addEventListener('change', async ev => {
+    if (!ev.target.checked) { klChange(() => { KL.lists.all = false; }); return; }
+    ev.target.checked = false;
+    const k = await keptPapers(), n = klAllFiles().length;
+    let room = 0;
+    try { const e = await navigator.storage.estimate(); room = Math.max(0, (e.quota || 0) - (e.usage || 0)); } catch (e) { room = 0; }
+    $('#keepAskTitle').textContent = 'Keep the whole library offline?';
+    $('#keepAskText').textContent = klAbout(n, k) + ', downloaded to this device' + (room ? ' (room for ' + sizeText(room) + ')' : '') + '. Papers you add later follow. Downloads run while Linden is open and online, the Reading list first, and stop short of the last 2 GB of room.';
+    $('#keepYes').textContent = 'Keep offline';
+    KEEP_ASK.run = () => klChange(() => { KL.lists.all = true; });
+    $('#keepAsk').showModal(); $('#keepNo').focus();
+  });
   $('#keepGroups').addEventListener('change', ev => {
     const b = ev.target.closest('[data-kl-off]');
     if (b && !b.checked) klChange(() => { KL.lists.groups = KL.lists.groups.filter(x => x !== b.dataset.klOff); });

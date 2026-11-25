@@ -3365,6 +3365,7 @@ button.rel-title, a.rel-title { cursor: pointer; }
 .keep-lists { display: grid; gap: 4px; padding: 8px 0 10px; border-top: 1px solid var(--line); }
 .keep-sw { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 4px 0 8px; cursor: pointer; }
 .keep-gh { margin-top: 4px; }
+.keep-lists.all > .keep-sw:has(#keepRl), .keep-lists.all > .keep-gh, .keep-lists.all > #keepGroups, .keep-lists.all > .keep-add { display: none; }
 .keep-grp { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0 6px 12px; font-size: 13.5px; }
 .keep-grp .set-text { min-width: 0; }
 .keep-grp .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
