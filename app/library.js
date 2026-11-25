@@ -2,7 +2,7 @@
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/library.js'] = '2026-11-25.02';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/library.js'] = '2026-11-25.03';
 const $ = s => document.querySelector(s);
 // The version, as the page gives it (index.html, the loading screen): the
 // one place the app's scripts take it from.
@@ -2529,14 +2529,28 @@ function paint() {
 }
 // Papers saved on this device (sw.js keeps them), by file id: marked in
 // the list, and the others faded while offline.
-let SAVED = new Set();
+// (PINNED: those kept for a list offline (see KL in start.js), downloaded
+// or not yet.) The mark: a cloud with a tick on the PDF icon; a dotted
+// cloud for one on a list kept offline that isn't here yet.
+let SAVED = new Set(), PINNED = new Set();
 const savedHere = e => readablePdfs(e).some(f => SAVED.has(f.id));
+const pinnedHere = e => !savedHere(e) && readablePdfs(e).some(f => PINNED.has(f.id));
+const KEPT_BADGE = '<svg class="kept-badge" viewBox="0 0 26 22" aria-hidden="true"><path d="M7 20.5h12.5a5.5 5.5 0 0 0 .9-10.9A7.5 7.5 0 0 0 6.2 8.2 6.2 6.2 0 0 0 7 20.5z" fill="var(--bf, var(--bg))" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M9 14.2l3 3 5.5-5.6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const WAIT_BADGE = '<svg class="kept-badge wait" viewBox="0 0 26 22" aria-hidden="true"><path d="M7 20.5h12.5a5.5 5.5 0 0 0 .9-10.9A7.5 7.5 0 0 0 6.2 8.2 6.2 6.2 0 0 0 7 20.5z" fill="var(--bf, var(--bg))" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-dasharray="3 2.4"/></svg>';
+const keptBadge = e => savedHere(e) ? KEPT_BADGE : pinnedHere(e) ? WAIT_BADGE : '';
 async function refreshSaved() {
   if (!window.LIBLANDE_PAGES || !window.caches) return;
   try {
-    const keys = await (await caches.open('liblande-papers')).keys();
+    const c = await caches.open('liblande-papers'), keys = await c.keys();
     const ids = new Set(keys.map(r => (/\/files\/([^/?]+)\?alt=media/.exec(r.url) || [])[1]).filter(Boolean).map(decodeURIComponent));
-    if ([...ids].join() !== [...SAVED].join()) { SAVED = ids; if (ENTRIES.length) paint(); }
+    let pins = new Set();
+    try { const r = await c.match('https:\/\/www.googleapis.com/drive/v3/files/__pinned__'); if (r) pins = new Set((await r.json()).ids || []); } catch (err) { /* none */ }
+    if ([...ids].join() !== [...SAVED].join() || [...pins].join() !== [...PINNED].join()) {
+      // (The details drawn again only if the selected one's mark changed.)
+      const sel = state.selKey && BYKEY.get(state.selKey), was = sel ? keptBadge(sel) : '';
+      SAVED = ids; PINNED = pins;
+      if (ENTRIES.length) { paint(); if (sel && keptBadge(sel) !== was) renderDetail(); }
+    }
   } catch (err) { /* none kept */ }
 }
 const refreshSavedSoon = (ms = 2500) => { clearTimeout(refreshSaved.t); refreshSaved.t = setTimeout(refreshSaved, ms); };
@@ -2605,7 +2619,7 @@ function rowHTML(e, i, top, h) {
   // several); without a server (the local tests), or for a file not found in Drive, it
   // links to Google Drive.
   const file = state.picking ? pickBox(e) : n
-    ? `<button type="button" class="fileicon${savedHere(e) ? ' saved' : ''}" data-open-pdf="${i}" title="${n > 1 ? 'Read one of its ' + n + ' PDFs' : 'Read ' + esc(f.n)}${savedHere(e) ? ' (offline)' : ''}" aria-label="Read the PDF">${ICON.doc}</button>`
+    ? `<button type="button" class="fileicon${savedHere(e) ? ' saved' : ''}" data-open-pdf="${i}" title="${n > 1 ? 'Read one of its ' + n + ' PDFs' : 'Read ' + esc(f.n)}${savedHere(e) ? ' (kept on this device)' : pinnedHere(e) ? ' (to be kept on this device)' : ''}" aria-label="Read the PDF${savedHere(e) ? ' (kept on this device)' : ''}">${ICON.doc}${keptBadge(e)}</button>`
     : f ? `<a class="fileicon" href="${esc(driveUrl(f))}" target="_blank" rel="noopener" title="Open ${esc(f.n)}" aria-label="Open linked file">${ICON.doc}</a>`
     : '';
   const ch = CHAPTER_ROWS.has(i);
@@ -2657,7 +2671,7 @@ function cardHTML(e, i, top, h) {
     (state.picking ? pickBox(e) : '') + `<div class="t">${b.before}<span class="t-text">${esc(e.f.title || '(untitled)')}</span>${b.after}</div>` +
     `<div class="m"><span>${esc(e.authorsInit)}${e.f.year ? ' \u00b7 ' + esc(e.f.year) : ''}${rlTag(e)}${cardWait(e)}</span></div>` +
     `<div class="m"><span class="v">${esc(e.venue)}</span>${!e.files ? '' : readablePdfs(e).length && !state.picking
-      ? `<button type="button" class="pdf${savedHere(e) ? ' saved' : ''}" data-open-pdf="${i}" aria-label="Read the PDF${savedHere(e) ? ' (saved on this device)' : ''}">PDF${readablePdfs(e).length > 1 ? ' \u00b7 ' + readablePdfs(e).length : ''}</button>`
+      ? `<button type="button" class="pdf${savedHere(e) ? ' saved' : ''}" data-open-pdf="${i}" aria-label="Read the PDF${savedHere(e) ? ' (kept on this device)' : ''}">${keptBadge(e)}PDF${readablePdfs(e).length > 1 ? ' \u00b7 ' + readablePdfs(e).length : ''}</button>`
       : '<span class="pdf">PDF</span>'}</div>${snipRows() ? `<div class="card-snip">${mxSnip(e, state.q)}</div>` : ''}</div>`;
 }
 // The PDFs of a publication that can be opened in the reader.
@@ -3234,6 +3248,9 @@ function renderDetail() {
       `<span class="car-pic">${j === first && cover ? coverBox(cover) : thumbBox(fl.id)}${strip(i)}</span><span class="thumb-name">${esc(fl.n)}</span></button>`).join('') +
       arrow(-1, 'M15 6l-6 6 6 6', 'Previous PDF') + arrow(1, 'M9 6l6 6-6 6', 'Next PDF');
   }
+  // (Kept on this device, in words: the iPad shows no tooltips.)
+  const kept = !hasPdf || !gs ? '' : savedHere(e) ? `<p class="kept-line">${KEPT_BADGE}<span>Kept on this device for reading offline</span></p>`
+    : pinnedHere(e) ? `<p class="kept-line wait">${WAIT_BADGE}<span>On a list kept offline: downloads when Linden is open</span></p>` : '';
   let notices = '';
   const twins = DUPS.get(e.k);
   if (twins) {
@@ -3291,10 +3308,10 @@ function renderDetail() {
     h = `<div class="d-two"><div class="d-inner">${h}${notices}${abs}${notesOn ? '' : chips}${body}${notesOn ? '' : vers}${fields}</div>` +
       // (Edit in the top corner, wherever the details are shown.)
       `<aside class="d-side${stack ? ' d-stack' : ''}">${gs ? `<button type="button" class="btn d-edit" data-edit>${ICON.pencil}<span>Edit</span></button>` : ''}` +
-      `${sideThumbs ? `<div class="thumbs t-side${pdfs.length > 1 ? ' car' : ''}"${pdfs.length > 1 ? ` data-car="${esc(e.k)}" aria-label="PDFs: ${pdfs.length}"` : ' aria-label="PDFs"'}>${sideThumbs}</div>` : ''}${acts}${rl}${metaH}</aside></div>`;
+      `${sideThumbs ? `<div class="thumbs t-side${pdfs.length > 1 ? ' car' : ''}"${pdfs.length > 1 ? ` data-car="${esc(e.k)}" aria-label="PDFs: ${pdfs.length}"` : ' aria-label="PDFs"'}>${sideThumbs}</div>` : ''}${kept}${acts}${rl}${metaH}</aside></div>`;
   } else {
     // (Rating and Read, looked at less than the abstract, after it.)
-    h = `<div class="d-inner">${h}${rl}${acts}${thumbs ? `<div class="thumbs t-inline">${thumbs}</div>` : ''}${notices}${abs}${notesOn ? '' : chips}${body}${metaH}${notesOn ? '' : vers}${fields}</div>`;
+    h = `<div class="d-inner">${h}${rl}${acts}${thumbs ? `<div class="thumbs t-inline">${thumbs}</div>` : ''}${kept}${notices}${abs}${notesOn ? '' : chips}${body}${metaH}${notesOn ? '' : vers}${fields}</div>`;
   }
   detailEl.innerHTML = h;
   detailEl.dataset.wide = wide ? '1' : '';

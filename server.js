@@ -17,7 +17,7 @@
   window.LIBLANDE_PAGES = true;
   // (Which version each part of the app is from: index.html checks they
   // match. build.py fills it in.)
-  (window.LIBLANDE_PARTS = window.LIBLANDE_PARTS || {}).server = '2026-11-25.02';
+  (window.LIBLANDE_PARTS = window.LIBLANDE_PARTS || {}).server = '2026-11-25.03';
   const CLIENT_ID = '789682218462-98mjugngb46ttd01ucp9dcj71ufspjgn.apps.googleusercontent.com';
   // Google Drive, in one of two ways (docs/drive-file-plan.md):
   // full: all of Drive (your .bib, papers and LibLande folder wherever
@@ -447,6 +447,12 @@
     refreshNow() { prefsMemo = null; return SERVER.getStatus(); },
     // Full or limited access to Google Drive, on this device (see above).
     getAccess() { return { access: access || 'full', email }; },
+    // The sign-in, if there's a good one, never asking for one (for work
+    // done in the background: lists kept offline); null if not.
+    quietToken() {
+      if (!valid()) { const st = store.get('token', null), was = token; if (st) { token = st; if (!valid()) token = was; } }
+      return valid() ? token.value : null;
+    },
     // The app's folder in Drive, as it's named there ("Linden" or "Linden").
     async driveFolder() { return { name: await builder.dataFolderName() }; },
     setAccess(mode) { setAccess(mode); return { access }; },

@@ -2,7 +2,7 @@
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/start.js'] = '2026-11-25.02';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/start.js'] = '2026-11-25.03';
 // On GitHub Pages, every part of the app must be from the same version: a
 // part kept from an older one (the offline copy, served when the network
 // was slow) lacks what this page needs. Then the kept copies go, and the
@@ -352,8 +352,12 @@ async function klSync() {
       KL.total = todo.length; KL.done = 0; KL.failed = 0;
       klProgress();
       for (const f of todo) {
-        // (As fetchAhead: only with a sign-in still good, never asking for one.)
-        if (KL.again || isOffline() || document.hidden || !tokenCache || Date.now() - tokenCache.at > 50 * 60 * 1000) break;
+        if (KL.again || isOffline() || document.hidden) break;
+        // (Only with a sign-in still good, never asking for one.)
+        let tok = null;
+        try { tok = await callServer('quietToken'); } catch (e) { tok = null; }
+        if (!tok) { KL.note = 'Waiting for your Google sign-in to download the rest (open a paper, or tap Reconnect).'; break; }
+        KL.tok = tok;
         // (Room left, looked at as it goes: stopped short of the last 2 GB.)
         try { const e = await navigator.storage.estimate(); if (e.quota && e.quota - e.usage < 2e9) { KL.note = 'Not enough room on this device to keep more for your lists.'; break; } } catch (e) { /* not known */ }
         const kept = await klFetch(c, f);
@@ -361,6 +365,7 @@ async function klSync() {
         if (!kept) { KL.failed++; KL.skip.set(f.id, Date.now()); }
         KL.done++;
         klProgress();
+        if (typeof refreshSavedSoon === 'function') refreshSavedSoon(500);
       }
     } while (KL.again);
   } finally {
@@ -377,7 +382,7 @@ const klUrl = id => 'https:\/\/www.googleapis.com/drive/v3/files/' + encodeURICo
 async function klFetch(c, f) {
   const url = klUrl(f.id), sw = navigator.serviceWorker && navigator.serviceWorker.controller;
   let r;
-  try { r = await fetch(url, { headers: { Authorization: 'Bearer ' + tokenCache.token } }); } catch (e) { return false; }
+  try { r = await fetch(url, { headers: { Authorization: 'Bearer ' + KL.tok } }); } catch (e) { return false; }
   if (r.status === 401 || r.status === 403) return 'stop';
   if (!r.ok) return false;
   try {

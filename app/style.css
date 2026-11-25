@@ -1875,9 +1875,21 @@ button.v-zoom { height: 28px; padding: 0 6px; border: 1px solid transparent; bor
 /* (A button: pressed, the count starts again.) */
 @media (hover: hover) { .rl-prog:hover { color: var(--text); box-shadow: inset 0 0 0 1px var(--line); } }
 .rl-where .rl-prog { margin: 0; }
-.fileicon.saved, .pdf.saved { position: relative; }
-.fileicon.saved::after { content: ''; position: absolute; right: 3px; bottom: 3px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 1.5px var(--bg); }
-.pdf.saved::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-right: 4px; vertical-align: 1px; }
+/* Kept on this device: a cloud with a tick on the PDF icon (dotted: on a
+   list kept offline, not here yet), filled with the row's own colour
+   (--bf) so it reads on any row, the selected one too. */
+.fileicon { position: relative; }
+.kept-badge { width: 13px; height: 11px; color: var(--accent); flex: none; --bf: var(--bg); }
+.kept-badge.wait { color: var(--muted); }
+.fileicon .kept-badge { position: absolute; right: -1px; bottom: 1px; }
+.row.odd .kept-badge { --bf: var(--stripe); }
+.row.child .kept-badge { --bf: color-mix(in srgb, var(--side-hover) 75%, var(--bg)); }
+@media (hover: hover) { .row:not(.sel):hover .kept-badge { --bf: var(--side-hover); } }
+.row.sel .kept-badge { color: var(--sel-text); --bf: var(--sel); }
+.pdf .kept-badge { width: 12px; height: 10px; margin-right: 3px; vertical-align: -1px; }
+.card.sel .kept-badge { --bf: var(--accent-soft); }
+.kept-line { display: flex; align-items: center; gap: 7px; margin: 6px 0 2px; font-size: 12.5px; color: var(--muted); }
+.kept-line .kept-badge { width: 15px; height: 13px; --bf: transparent; }
 body.is-offline .fileicon:not(.saved), body.is-offline .pdf:not(.saved) { opacity: .3; }
 /* Offline, or changes waiting to go to Drive: a small cloud in the
    toolbars (struck through offline), with how many are waiting. */
