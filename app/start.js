@@ -2,7 +2,7 @@
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/start.js'] = '2026-11-25.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/start.js'] = '2026-11-25.02';
 // On GitHub Pages, every part of the app must be from the same version: a
 // part kept from an older one (the offline copy, served when the network
 // was slow) lacks what this page needs. Then the kept copies go, and the
@@ -174,8 +174,10 @@ if (window.LIBLANDE_PAGES) setTimeout(driveFolderName, 8000);
 // a browser tab.
 const KEEP_KEY = 'https:\/\/www.googleapis.com/drive/v3/files/__keep__', PAPERS_CACHE = 'liblande-papers';
 const KEEP_MAX = { 60: ['Up to 60 papers, about 1.5 GB', 1.5e9, 60], 200: ['Up to 200 papers, about 5 GB', 5e9, 200], all: ['Every paper you open, while there\u2019s room', 0, 0] };
+// (What Remove (or Keep offline) in the #keepAsk dialog does.)
+const KEEP_ASK = { run: null };
 const installedApp = () => !!((window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone);
-const sizeText = n => n >= 1e9 ? (n / 1e9).toFixed(1) + ' GB' : Math.max(1, Math.round(n / 1e6)) + ' MB';
+const sizeText = n => n >= 1e9 ? (n / 1e9).toFixed(1) + ' GB' : (n > 0 ? Math.max(1, Math.round(n / 1e6)) : 0) + ' MB';
 async function keepChoice() {
   try { const r = await (await caches.open(PAPERS_CACHE)).match(KEEP_KEY); if (r) { const v = String((await r.json()).keep); if (KEEP_MAX[v]) return { v, set: true }; } } catch (e) { /* the default */ }
   return { v: installedApp() ? '200' : '60', set: false };
@@ -185,10 +187,18 @@ async function keepSet(v) {
   const sw = navigator.serviceWorker && navigator.serviceWorker.controller;
   if (sw) sw.postMessage({ type: 'trim' });
 }
+// (What's kept: the recently opened (keys, n, bytes, sizes, in the order
+// kept, oldest first), and apart, those kept for lists (lists: {n, bytes}).)
 async function keptPapers() {
-  const c = await caches.open(PAPERS_CACHE), keys = (await c.keys()).filter(r => r.url.endsWith('?alt=media'));
-  const sizes = await Promise.all(keys.map(async r => { const x = await c.match(r); return Number(x && x.headers.get('X-LibLande-Size')) || 0; }));   // keep-name
-  return { c, keys, n: keys.length, bytes: sizes.reduce((a, b) => a + b, 0) };
+  const c = await caches.open(PAPERS_CACHE), pins = await klPinned(c);
+  const all = (await c.keys()).filter(r => r.url.endsWith('?alt=media'));
+  const sizeOf = async r => { const x = await c.match(r); return Number(x && x.headers.get('X-LibLande-Size')) || 0; };   // keep-name
+  const keys = [], sizes = [], lists = { n: 0, bytes: 0 };
+  for (const r of all) {
+    const s = await sizeOf(r);
+    if (pins.has(klId(r.url))) { lists.n++; lists.bytes += s; } else { keys.push(r); sizes.push(s); }
+  }
+  return { c, keys, sizes, n: keys.length, bytes: sizes.reduce((a, b) => a + b, 0), lists, pins };
 }
 async function keepShow() {
   const sec = $('#keepSec');
@@ -206,6 +216,9 @@ async function keepShow() {
   $('#keepMax').textContent = KEEP_MAX[v][0];
   $('#keepClear').disabled = !k.n;
   $('#keepTab').hidden = installedApp();
+  $('#keepListsNow').hidden = !k.lists.n;
+  $('#keepListsNow').innerHTML = `<span><b>${k.lists.n.toLocaleString()} ${k.lists.n === 1 ? 'paper' : 'papers'}</b>, ${sizeText(k.lists.bytes)}, kept for lists (not counted in the limit)</span>`;
+  klRender(k);
 }
 // (On Pages, where sw.js keeps papers; and on the test page.)
 if ((window.LIBLANDE_PAGES || window.LIBLANDE_TEST) && window.caches && $('#keepSec')) {
@@ -223,14 +236,12 @@ if ((window.LIBLANDE_PAGES || window.LIBLANDE_TEST) && window.caches && $('#keep
     KEEP_ASK.run = run;
     $('#keepAsk').showModal(); $('#keepNo').focus();
   };
-  const KEEP_ASK = { run: null };
   $('#keepSeg').addEventListener('click', async ev => {
     const b = ev.target.closest('[data-keep]');
     if (!b || b.getAttribute('aria-checked') === 'true') return;
     const v = b.dataset.keep, [, maxB, maxN] = KEEP_MAX[v];
     if (maxN) {
-      const k = await keptPapers();
-      const sizes = await Promise.all(k.keys.map(async r => { const x = await k.c.match(r); return Number(x && x.headers.get('X-LibLande-Size')) || 0; }));   // keep-name
+      const k = await keptPapers(), sizes = k.sizes;
       let n = k.n, bytes = k.bytes, gone = 0, goneB = 0;
       for (let i = 0; i < sizes.length - 1 && (n > maxN || bytes > maxB); i++) { n--; bytes -= sizes[i]; gone++; goneB += sizes[i]; }
       if (gone) { keepAsk('Keep only the ' + maxN + ' most recent?', gone.toLocaleString() + ' ' + (gone === 1 ? 'paper' : 'papers') + ', ' + sizeText(goneB) + ', will be removed from this device. They\u2019re still in Google Drive.', 'Remove', () => keepTo(v)); return; }
@@ -245,13 +256,176 @@ if ((window.LIBLANDE_PAGES || window.LIBLANDE_TEST) && window.caches && $('#keep
   $('#keepYes').addEventListener('click', () => { $('#keepAsk').close(); const run = KEEP_ASK.run; KEEP_ASK.run = null; if (run) run(); });
   async function keepClear() {
     try {
+      // (The recently opened; those kept for lists stay.)
       const k = await keptPapers();
-      for (const r of await k.c.keys()) if (r.url !== KEEP_KEY) await k.c.delete(r);
+      for (const r of k.keys) { await k.c.delete(r); await k.c.delete(r.url.replace('?alt=media', '?fields=md5Checksum')); }
       toast('Removed ' + k.n.toLocaleString() + ' kept ' + (k.n === 1 ? 'paper' : 'papers') + ' (' + sizeText(k.bytes) + ').', 4000);
     } catch (e) { toast('Couldn\u2019t remove them: ' + errText(e), 5000); }
     keepShow();
     if (typeof refreshSaved === 'function') refreshSaved();
   }
+}
+
+/* ------------------------------------------------------------ lists kept offline */
+// Settings > This device: the Reading list and groups chosen to keep
+// offline on this device (KL.lists, kept here only), every paper in them
+// downloaded ahead (one at a time, while the app's open, in front and
+// online), ones added later too. The papers' ids are written for sw.js at
+// PIN_KEY: not counted in the limit, never let go for it. A list over 200
+// papers or about 2 GB is asked about first.
+const PIN_KEY = 'https:\/\/www.googleapis.com/drive/v3/files/__pinned__';
+const KL = { lists: store.get('offlineLists', { rl: false, groups: [] }), running: false, again: false, done: 0, total: 0, failed: 0, t: 0, note: '',
+  // (Papers that couldn't be downloaded: not tried again for a day.)
+  skip: new Map() };
+const klId = url => { const m = /\/files\/([^/?]+)\?/.exec(url); return m ? decodeURIComponent(m[1]) : ''; };
+async function klPinned(c) {
+  try { const r = await c.match(PIN_KEY); if (r) return new Set((await r.json()).ids || []); } catch (e) { /* none */ }
+  return new Set();
+}
+const klSave = () => store.set('offlineLists', KL.lists);
+const klGroups = () => (GROUPS || []).map(g => 's:' + g.name).concat((SMART && SMART.list || []).map(x => 'q:' + x.name));
+// A list's papers' PDFs (each readable file), the Reading list's in its
+// order (Up next first).
+function klFiles(id) {
+  const out = [];
+  for (const e of groupItems(id) || []) if (!e.ib) for (const f of readablePdfs(e)) out.push(f);
+  return out;
+}
+function klTargets() {
+  const seen = new Set(), out = [];
+  const add = f => { if (!seen.has(f.id)) { seen.add(f.id); out.push(f); } };
+  if (KL.lists.rl) klFiles('toread').forEach(add);
+  KL.lists.groups.forEach(id => klFiles(id).forEach(add));
+  return out;
+}
+// (About how much: the average of what's kept here, or 3 MB a paper.)
+const klAvg = k => (k && (k.n + k.lists.n) ? (k.bytes + k.lists.bytes) / (k.n + k.lists.n) : 3e6);
+const klAbout = (n, k) => n.toLocaleString() + ' ' + (n === 1 ? 'paper' : 'papers') + ', about ' + sizeText(n * klAvg(k));
+function klRender(k) {
+  const rl = $('#keepRl');
+  if (!rl) return;
+  rl.checked = !!KL.lists.rl;
+  $('#keepRlHint').textContent = 'Every paper on it, downloaded ahead; ones you add later too. ' + klAbout(klFiles('toread').length, k) + '.';
+  const have = new Set(klGroups());
+  $('#keepGroups').innerHTML = KL.lists.groups.filter(id => have.has(id)).map(id => `<label class="keep-grp"><span class="set-text"><span class="nm">${esc(groupName(id))}</span><span class="hint">${esc(klAbout(klFiles(id).length, k))}</span></span>` +
+    `<span class="switch"><input type="checkbox" role="switch" checked data-kl-off="${esc(id)}" aria-label="Keep ${esc(groupName(id))} offline"><span aria-hidden="true"></span></span></label>`).join('');
+  $('#keepGroupMenu').innerHTML = `<div class="menu-head">Keep a group offline</div>` + (klGroups().map(id => {
+    const on = KL.lists.groups.includes(id);
+    return `<button type="button" role="menuitem" class="mi" data-kl-group="${esc(id)}"><span>${esc(groupName(id))}</span><small>${esc(klAbout(klFiles(id).length, k).replace(' papers, about', ' \u00b7').replace(' paper, about', ' \u00b7'))}</small>${on ? '<span class="chk">\u2713</span>' : ''}</button>`;
+  }).join('') || '<div class="menu-head">No groups yet.</div>');
+  klProgress();
+}
+function klProgress() {
+  const p = $('#keepProg');
+  if (!p) return;
+  const busy = KL.running && KL.total > KL.done;
+  p.hidden = !busy && !KL.failed && !KL.note;
+  p.classList.toggle('busy', busy);
+  p.textContent = busy ? 'Downloading for offline: ' + KL.done.toLocaleString() + ' of ' + KL.total.toLocaleString() + '\u2026'
+    : KL.note || (KL.failed ? KL.failed + (KL.failed === 1 ? ' paper' : ' papers') + ' couldn\u2019t be downloaded (not found in Drive, or out of reach).' : '');
+}
+// Turning a list on or off: the papers written for sw.js, then fetched.
+// (Shown at once; the downloads go on behind.)
+async function klChange(fn) {
+  fn();
+  klSave();
+  if (typeof keepShow === 'function') keepShow().catch(() => {});
+  klSync();
+}
+async function klSync() {
+  // (Not before the library's there: its lists would look empty, and what
+  // they keep be let go.)
+  if (!window.caches || !gs || !ENTRIES.length) return;
+  if (KL.running) { KL.again = true; return; }
+  KL.running = true;
+  try {
+    do {
+      KL.again = false;
+      KL.note = '';
+      const c = await caches.open(PAPERS_CACHE), files = klTargets(), ids = new Set(files.map(f => f.id));
+      // (Those no longer kept for a list: removed, so they don't push out
+      // the papers you opened yourself.)
+      for (const id of await klPinned(c)) if (!ids.has(id)) { await c.delete(klUrl(id)); await c.delete(klUrl(id).replace('?alt=media', '?fields=md5Checksum')); }
+      await c.put(PIN_KEY, new Response(JSON.stringify({ ids: [...ids] }), { headers: { 'Content-Type': 'application/json' } }));
+      const have = new Set((await c.keys()).filter(r => r.url.endsWith('?alt=media')).map(r => klId(r.url)));
+      const now = Date.now(), todo = files.filter(f => !have.has(f.id) && !(KL.skip.get(f.id) > now - 864e5));
+      KL.total = todo.length; KL.done = 0; KL.failed = 0;
+      klProgress();
+      for (const f of todo) {
+        // (As fetchAhead: only with a sign-in still good, never asking for one.)
+        if (KL.again || isOffline() || document.hidden || !tokenCache || Date.now() - tokenCache.at > 50 * 60 * 1000) break;
+        // (Room left, looked at as it goes: stopped short of the last 2 GB.)
+        try { const e = await navigator.storage.estimate(); if (e.quota && e.quota - e.usage < 2e9) { KL.note = 'Not enough room on this device to keep more for your lists.'; break; } } catch (e) { /* not known */ }
+        const kept = await klFetch(c, f);
+        if (kept === 'stop') break;
+        if (!kept) { KL.failed++; KL.skip.set(f.id, Date.now()); }
+        KL.done++;
+        klProgress();
+      }
+    } while (KL.again);
+  } finally {
+    KL.running = false;
+    klProgress();
+    if (typeof refreshSaved === 'function') refreshSaved();
+    if ($('#keepSec') && !$('#keepSec').classList.contains('off-tab') && !$('#setup').hidden) keepShow().catch(() => {});
+  }
+}
+const klUrl = id => 'https:\/\/www.googleapis.com/drive/v3/files/' + encodeURIComponent(id) + '?alt=media';
+// One paper: fetched with this device's token (kept by sw.js on its way:
+// read through and let go, not held here), then checked for. true: kept;
+// false: not (to skip for a day); 'stop': signed out, or no room.
+async function klFetch(c, f) {
+  const url = klUrl(f.id), sw = navigator.serviceWorker && navigator.serviceWorker.controller;
+  let r;
+  try { r = await fetch(url, { headers: { Authorization: 'Bearer ' + tokenCache.token } }); } catch (e) { return false; }
+  if (r.status === 401 || r.status === 403) return 'stop';
+  if (!r.ok) return false;
+  try {
+    if (sw && r.body && r.body.getReader) { const rd = r.body.getReader(); for (;;) { const { done } = await rd.read(); if (done) break; } }
+    else {
+      // (No sw.js yet: kept here.)
+      const blob = await r.blob();
+      await c.put(url, new Response(blob, { headers: { 'Content-Type': 'application/pdf', 'X-LibLande-Size': String(blob.size) } }));   // keep-name
+    }
+  } catch (e) { return false; }
+  // (sw.js writes it as it comes: a few seconds for it to be there.)
+  for (let i = 0; i < 20; i++) { if (await c.match(url)) return true; await new Promise(res => setTimeout(res, 250)); }
+  KL.note = 'Not enough room on this device to keep more for your lists.';
+  return 'stop';
+}
+// (Looked at again: soon after the start, every ten minutes, back online,
+// back in front.)
+if ((window.LIBLANDE_PAGES || window.LIBLANDE_TEST) && window.caches) {
+  const later = ms => { clearTimeout(KL.t); KL.t = setTimeout(() => { if (KL.lists.rl || KL.lists.groups.length) klSync(); }, ms); };
+  later(15000);
+  setInterval(() => later(0), 10 * 60 * 1000);
+  window.addEventListener('online', () => later(3000));
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) later(3000); });
+  $('#keepRl').addEventListener('change', ev => klChange(() => { KL.lists.rl = ev.target.checked; }));
+  $('#keepGroups').addEventListener('change', ev => {
+    const b = ev.target.closest('[data-kl-off]');
+    if (b && !b.checked) klChange(() => { KL.lists.groups = KL.lists.groups.filter(x => x !== b.dataset.klOff); });
+  });
+  $('#keepGroupMenu').addEventListener('click', async ev => {
+    const b = ev.target.closest('[data-kl-group]');
+    if (!b) return;
+    b.closest('details').open = false;
+    const id = b.dataset.klGroup;
+    if (KL.lists.groups.includes(id)) { klChange(() => { KL.lists.groups = KL.lists.groups.filter(x => x !== id); }); return; }
+    const k = await keptPapers(), n = klFiles(id).length, est = n * klAvg(k);
+    const go = () => klChange(() => { KL.lists.groups.push(id); });
+    if (n > 200 || est > 2e9) {
+      let room = 0;
+      try { const e = await navigator.storage.estimate(); room = Math.max(0, (e.quota || 0) - (e.usage || 0)); } catch (e) { room = 0; }
+      $('#keepAskTitle').textContent = 'Keep \u201c' + groupName(id) + '\u201d offline?';
+      $('#keepAskText').textContent = klAbout(n, k) + ', downloaded to this device' + (room ? ' (room for ' + sizeText(room) + ')' : '') + '. Papers added to the group later follow. Downloads run while Linden is open and online.';
+      $('#keepYes').textContent = 'Keep offline';
+      KEEP_ASK.run = go;
+      $('#keepAsk').showModal(); $('#keepNo').focus();
+      return;
+    }
+    go();
+  });
 }
 
 /* ------------------------------------------------------------ navigation */

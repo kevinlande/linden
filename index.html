@@ -270,8 +270,16 @@ try {
       <div class="set-group">
         <div class="keep-top"><div class="set-text"><span class="set-name">Papers kept on this device</span><span class="hint">The ones you opened most recently, to read without a connection.</span></div>
         <div class="seg set-mode keep-seg" id="keepSeg" role="radiogroup" aria-label="Papers kept on this device"><button type="button" role="radio" data-keep="60">60</button><button type="button" role="radio" data-keep="200">200</button><button type="button" role="radio" data-keep="all">All</button></div></div>
+        <div class="keep-lists">
+          <label class="keep-sw"><span class="set-text"><span class="set-name">Keep the Reading list offline</span><span class="hint" id="keepRlHint">Every paper on it, downloaded ahead; ones you add later too.</span></span><span class="switch"><input type="checkbox" role="switch" id="keepRl"><span aria-hidden="true"></span></span></label>
+          <div class="set-text keep-gh"><span class="set-name">Groups kept offline</span><span class="hint">Every paper in the group, downloaded ahead; ones added later too.</span></div>
+          <div id="keepGroups"></div>
+          <details class="menu keep-add"><summary class="btn">+ Add a group&#x2026;</summary><div class="menu-list" role="menu" id="keepGroupMenu"></div></details>
+          <p class="keep-prog" id="keepProg" role="status" hidden></p>
+        </div>
         <div class="keep-use">
           <div class="keep-line"><span id="keepNow"></span><span id="keepRoom"></span></div>
+          <div class="keep-line" id="keepListsNow" hidden></div>
           <div class="keep-meter" aria-hidden="true"><i id="keepBar"></i></div>
           <div class="keep-line"><span id="keepMax"></span><button type="button" class="btn set-reset" id="keepClear">Remove kept papers&#x2026;</button></div>
           <div class="dup-note warn" id="keepTab" hidden><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4.5M12 17.2v.3"/></svg><span>In a browser tab, the browser may clear these if you don&#x2019;t open Linden for a week or so. Add it to the Dock or Home Screen to keep them.</span></div>
@@ -405,7 +413,7 @@ try {
     </div>
   </form>
 </div>
-<div class="loading" id="loading"><b>Linden</b><span>Starting up&#x2026;</span><small id="version">Version 2026-11-25.01</small></div>
+<div class="loading" id="loading"><b>Linden</b><span>Starting up&#x2026;</span><small id="version">Version 2026-11-25.02</small></div>
 <script>
 // Show any error that stops the page on the loading screen, including
 // syntax errors in the main script below; once the library is showing, in
@@ -420,7 +428,7 @@ try {
     if (l && !l.hidden) {
       l.innerHTML = '<b>The page hit an error</b><span></span><small></small>';
       l.querySelector('span').textContent = msg;
-      l.querySelector('small').textContent = 'Version 2026-11-25.01';
+      l.querySelector('small').textContent = 'Version 2026-11-25.02';
       return;
     }
     var bar = document.getElementById('errBar');
@@ -433,7 +441,7 @@ try {
       bar.addEventListener('click', function () { bar.remove(); });
       document.body.appendChild(bar);
     }
-    bar.firstChild.textContent = 'Linden hit an error (version 2026-11-25.01): ' + msg;
+    bar.firstChild.textContent = 'Linden hit an error (version 2026-11-25.02): ' + msg;
   }
   window.addEventListener('error', function (e) { report((e.message || 'Unknown error') + (e.lineno ? ' [line ' + e.lineno + ':' + (e.colno || 0) + ']' : '')); });
   window.addEventListener('unhandledrejection', function (e) { report((e.reason && e.reason.message) || String(e.reason)); });
