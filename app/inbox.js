@@ -2,7 +2,7 @@
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/inbox.js'] = '2026-11-24.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/inbox.js'] = '2026-11-25.01';
 /* ------------------------------------------------------------ the Inbox */
 // Works you came across (cited in a paper you're reading, say) and want to
 // look at before deciding to keep them: their details, where you found
@@ -114,7 +114,7 @@ function ibEntry(x) {
     k: IB_PRE + x.id, t, inbox: x, a: people, e: more.editor ? parseNamesLite(more.editor) : [], u: x.url ? [x.url] : [],
     f: Object.assign({}, more, { title: x.title || '', year: x.year ? String(x.year) : '', doi: x.doi || '', abstract: x.abs || '',
       'date-added': new Date(x.added || x.at || Date.now()).toISOString().replace('T', ' ').slice(0, 19) }, x.venue || !more[venueField] ? { [venueField]: x.venue || '' } : {}),
-    files: x.pdf && x.pdf.id ? [{ id: x.pdf.id, n: x.pdf.n || 'PDF', p: 'LibLande/Inbox/Papers/' + (x.pdf.n || 'PDF') }] : null,
+    files: x.pdf && x.pdf.id ? [{ id: x.pdf.id, n: x.pdf.n || 'PDF', p: DRIVE_DIR.name + '/Inbox/Papers/' + (x.pdf.n || 'PDF') }] : null,
   };
   prep(e);
   INBOX.cache.set(x.id, e);

@@ -2,7 +2,7 @@
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/library.js'] = '2026-11-24.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/library.js'] = '2026-11-25.01';
 const $ = s => document.querySelector(s);
 // The version, as the page gives it (index.html, the loading screen): the
 // one place the app's scripts take it from.
@@ -79,6 +79,10 @@ const FIELD_ORDER = ['author', 'editor', 'title', 'year', 'origdate', 'month', '
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[\u2010-\u2015]/g, '-');
+// The app's folder in Google Drive, as it's named there: "Linden" for a
+// library made before the rename (2026-11-24), "Linden" since. Found out
+// from the server (driveFolderName in start.js), remembered here.
+const DRIVE_DIR = { name: 'LibLande' };   // keep-name
 const store = {
   get(k, d) { try { const v = localStorage.getItem('landelib.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) {
@@ -952,7 +956,7 @@ function papersPrefix() {
 function attachFile(e, file) {
   if (!gs || !e) return;
   if (!isPdf(file)) { toast('Only PDFs can be attached, and \u201c' + (file && file.name) + '\u201d isn\u2019t one.', 4000); return; }
-  if (e.ib) { toast('This publication is in your LibLande inbox. Move it into your library first.', 5000); return; }
+  if (e.ib) { toast('This publication is in your Inbox. Move it into your library first.', 5000); return; }
   if (e.files && e.files.length) {
     sheet = { mode: 'attach', entry: e, file };
     showSheet(`<h2>Attach a PDF</h2><p class="sheet-note">\u201c${esc(e.f.title || e.k)}\u201d already has ` +
@@ -3256,7 +3260,7 @@ function renderDetail() {
 
   if (e.ib) {
     notices += `<p class="inbox-note">Added in Linden and waiting in your inbox. To move it into ${esc(DATA.source)}, open ` +
-      `LibLande \u203a Inbox \u203a LibLande inbox.bib in BibDesk and drag it into your library.</p>`;
+      `${esc(DRIVE_DIR.name)} \u203a Inbox \u203a LibLande inbox.bib in BibDesk and drag it into your library.</p>`;   // keep-name
   }
   const kwAdd = gs ? `<span class="kw-add-wrap"><button type="button" class="chip kw-add" data-kw-add title="Add a keyword">+ Keyword</button></span>` : '';
   let chips = '';

@@ -17,7 +17,7 @@
   window.LIBLANDE_PAGES = true;
   // (Which version each part of the app is from: index.html checks they
   // match. build.py fills it in.)
-  (window.LIBLANDE_PARTS = window.LIBLANDE_PARTS || {}).server = '2026-11-24.01';
+  (window.LIBLANDE_PARTS = window.LIBLANDE_PARTS || {}).server = '2026-11-25.01';
   const CLIENT_ID = '789682218462-98mjugngb46ttd01ucp9dcj71ufspjgn.apps.googleusercontent.com';
   // Google Drive, in one of two ways (docs/drive-file-plan.md):
   // full: all of Drive (your .bib, papers and LibLande folder wherever
@@ -447,6 +447,8 @@
     refreshNow() { prefsMemo = null; return SERVER.getStatus(); },
     // Full or limited access to Google Drive, on this device (see above).
     getAccess() { return { access: access || 'full', email }; },
+    // The app's folder in Drive, as it's named there ("Linden" or "Linden").
+    async driveFolder() { return { name: await builder.dataFolderName() }; },
     setAccess(mode) { setAccess(mode); return { access }; },
     // Google's picker, then waiting for what was picked to be Linden's.
     async pickFiles(opts) {
@@ -485,10 +487,10 @@
     async adoptDataFolder() {
       // (The ones Linden sees already are those it made itself.)
       const mine = new Set([].concat(...await Promise.all(['Linden', DATA_FOLDER].map(name => storage().children(storage().root, { name, folders: true, fields: 'id' })))).map(f => f.id));
-      const [folder] = await pick({ what: 'folder', query: DATA_FOLDER, title: 'Select your earlier LibLande folder (My Drive \u203a LibLande, with Backups, Inbox and Exports in it), then Select' });
+      const [folder] = await pick({ what: 'folder', title: 'Select your earlier folder (in My Drive: Linden, or the LibLande folder, with Backups, Inbox and Exports in it), then Select' });
       if (!folder) return { adopted: false };
       if (folder.name !== DATA_FOLDER && folder.name !== 'Linden') throw new Error('That folder is \u201c' + folder.name + '\u201d. Choose the one named LibLande (or Linden), in My Drive.');   // keep-name
-      if (mine.has(folder.id)) throw new Error('That\u2019s the LibLande folder made with limited access. Choose the other one named LibLande, the earlier one.');
+      if (mine.has(folder.id)) throw new Error('That\u2019s the folder made with limited access. Choose the other one, the earlier one.');
       const inside = await pick({ what: 'all', parent: folder.id, title: 'Select everything in it (\u2318A), then Select' });
       if (!inside.length) return { adopted: false };
       const inbox = inside.find(f => f.name === 'Inbox' && f.mimeType === FOLDER);

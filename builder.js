@@ -20,7 +20,7 @@
  */
 (function (root) {
   'use strict';
-  if (root.document) (root.LIBLANDE_PARTS = root.LIBLANDE_PARTS || {}).builder = '2026-11-24.01';
+  if (root.document) (root.LIBLANDE_PARTS = root.LIBLANDE_PARTS || {}).builder = '2026-11-25.01';
   const FOLDER = 'application/vnd.google-apps.folder';
   // (The folder in Drive: "Linden" for a library made since the rename
   // (2026-11-24), "LibLande" for one made before, which keeps its name;   // keep-name
@@ -217,7 +217,7 @@
     // with create, when there's none).
     // (Remembered, and checked again after ten minutes: one moved to the
     // trash, or deleted, while Linden is open is looked for again.)
-    let dataId = null, dataChecked = 0;
+    let dataId = null, dataChecked = 0, dataName = DATA_FOLDER;
     async function dataFolder(create) {
       if (dataId && Date.now() - dataChecked < 10 * 60 * 1000) return dataId;
       if (dataId) {
@@ -237,15 +237,16 @@
       const folders = (await dataFolders('id,name,createdTime,appProperties'))
         .sort((a, b) => String(a.createdTime || '').localeCompare(String(b.createdTime || '')));
       for (const f of folders) {
-        if (await named(f.id, LIBRARY_FILE, 'id') || await named(f.id, SETTINGS_FILE, 'id')) return (dataId = f.id);
+        if (await named(f.id, LIBRARY_FILE, 'id') || await named(f.id, SETTINGS_FILE, 'id')) { dataName = f.name; return (dataId = f.id); }
       }
       // (Empty: a "Linden" one, or a "Linden" one this app made, never a
       // folder of yours that happens to be called Linden.)
       const ours = folders.filter(madeHere);
-      if (ours.length) return (dataId = ours[0].id);
+      if (ours.length) { dataName = ours[0].name; return (dataId = ours[0].id); }
       if (!create) return null;
       const made = await S.mkdir(S.root, NEW_DATA_FOLDER);
       await S.update(made.id, { appProperties: { liblande: 'data' } }).catch(() => {});
+      dataName = NEW_DATA_FOLDER;
       return (dataId = made.id);
     }
     const madeHere = f => f.name === DATA_FOLDER || !!(f.appProperties && f.appProperties.liblande === 'data');
@@ -618,7 +619,9 @@
       forgetDataFolder();
       return { ok: true, renamed: others.length };
     }
-    return { storage: S, look, build, settings, updateSettings, dataFolder, adoptDataFolder, named, meta, text, textAt, remember, noteFile, readJson, writeFile, notUtf8: id => notUtf8.has(id) };
+    // (Its name: "Linden" or "Linden".)
+    const dataFolderName = async () => (await dataFolder()) ? dataName : null;
+    return { storage: S, look, build, settings, updateSettings, dataFolder, dataFolderName, adoptDataFolder, named, meta, text, textAt, remember, noteFile, readJson, writeFile, notUtf8: id => notUtf8.has(id) };
   }
 
   root.makeLiblandeBuilder = makeBuilder;

@@ -119,7 +119,7 @@
       const lib = ((await (await drive('files?q=' + encodeURIComponent("name = 'library.json.gz' and " + q(f.id) + ' in parents and trashed = false') + '&fields=files(id,modifiedTime)')).json()).files || [])[0];
       if (lib) return lib;
     }
-    throw new Error('No Linden library in your Google Drive (My Drive \u203a LibLande).');
+    throw new Error('No library in your Google Drive (My Drive \u203a Linden, or the LibLande folder for one made before November 2026).');
   }
   const gunzip = async buf => JSON.parse(await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).text());
   async function fetchLibrary(force) {

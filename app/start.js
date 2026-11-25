@@ -2,7 +2,7 @@
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/start.js'] = '2026-11-24.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/start.js'] = '2026-11-25.01';
 // On GitHub Pages, every part of the app must be from the same version: a
 // part kept from an older one (the offline copy, served when the network
 // was slow) lacks what this page needs. Then the kept copies go, and the
@@ -149,6 +149,22 @@ function setSettingsTab(t) {
   if (card) card.scrollTop = 0;
 }
 $('#setTabs').addEventListener('click', ev => { const b = ev.target.closest('[data-stab]'); if (b) setSettingsTab(b.dataset.stab); });
+
+/* ------------------------------------------------------------ the Drive folder's name */
+// "Linden" or "Linden" (see DRIVE_DIR in library.js): asked of the
+// server once the library is there, and when Settings opens; shown in
+// Settings' Backups row, and used in the paths the app shows.
+function driveFolderName() {
+  return callServer('driveFolder').then(r => {
+    if (!r || !r.name) return;
+    DRIVE_DIR.name = r.name;
+    store.set('driveName', r.name);
+    const b = $('#driveBackups');
+    if (b) b.textContent = 'In Drive: ' + r.name + ' \u203a Backups';
+  }).catch(() => {});
+}
+DRIVE_DIR.name = store.get('driveName', DRIVE_DIR.name);
+if (window.LIBLANDE_PAGES) setTimeout(driveFolderName, 8000);
 
 /* ------------------------------------------------------------ reading offline */
 // Settings > This device: how many papers sw.js keeps for reading offline
@@ -1080,6 +1096,7 @@ if (RELOADING) {
     // way is chosen at a first sign-in.)
     pickMode(false);
     $('#adoptFirst').hidden = true;
+    if (window.LIBLANDE_PAGES) driveFolderName();
     if (window.LIBLANDE_PAGES) callServer('getAccess').then(a => {
       ACCESS = a.access;
       pickMode(true, a.access === 'limited');
@@ -1152,7 +1169,7 @@ if (RELOADING) {
     try {
       const r = await callServer('adoptDataFolder');
       if (!r.adopted) return;
-      setupMsg('Using your earlier LibLande folder\u2026', 'status');
+      setupMsg('Using your earlier folder\u2026', 'status');
       await cache.clear();
       location.reload();
     } catch (err) {

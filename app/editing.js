@@ -2,7 +2,7 @@
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/editing.js'] = '2026-11-24.01';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/editing.js'] = '2026-11-25.01';
 /* ------------------------------------------------------------ add and edit */
 const TYPE_FIELDS = {
   article: ['journal', 'volume', 'number', 'pages'],
@@ -2330,7 +2330,7 @@ function openExport(dest) {
   showSheet(`<h2>Share ${n} publication${n === 1 ? '' : 's'}</h2>` +
     `<p class="exp-what" id="expWhat"></p>` +
     `<fieldset class="fld grp-fieldset"><legend>To</legend><div class="exp-tiles">` +
-    expTile('expDest', 'drive', EXP_ICON.drive, 'Google Drive', 'A new folder in LibLande \u203a Exports', !share) +
+    expTile('expDest', 'drive', EXP_ICON.drive, 'Google Drive', 'A new folder in ' + DRIVE_DIR.name + ' \u203a Exports', !share) +
     expTile('expDest', 'device', ICON.download, 'This device', coarseMQ.matches ? 'Save to Files' : 'One .zip file', false) +
     (navigator.canShare ? expTile('expDest', 'share', ICON.share, 'Another app', 'Mail, Messages, AirDrop\u2026', share) : '') +
     `</div></fieldset>` +
@@ -2414,7 +2414,7 @@ async function runExport() {
     await Promise.all(Array.from({ length: mode === 'clean' ? 2 : 4 }, async () => { while (queue.length) await one(queue.shift()); }));
     const ok = pdfs.length - failed.length;
     sheetMsg('');
-    $('#sheetBody').insertAdjacentHTML('beforeend', `<div class="export-done"><p><b>Exported to LibLande \u203a Exports \u203a ${esc(res.name)}</b>: ` +
+    $('#sheetBody').insertAdjacentHTML('beforeend', `<div class="export-done"><p><b>Exported to ${esc(DRIVE_DIR.name)} \u203a Exports \u203a ${esc(res.name)}</b>: ` +
       exportWhat(!!docs, pdfs.length, ok, mode) + `.</p>` +
       (failed.length ? `<p class="warn">${failed.length} PDF${failed.length === 1 ? '' : 's'} couldn\u2019t be added: ${esc(failed.join('; '))}</p>` : '') +
       `<a class="btn primary" href="${esc(res.url)}" target="_blank" rel="noopener">${ICON.drive}<span>Open the folder in Google Drive</span></a></div>`);
