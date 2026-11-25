@@ -2,7 +2,7 @@
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/reader.js'] = '2026-11-25.04';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/reader.js'] = '2026-11-25.05';
 /* ------------------------------------------------------------ PDF reader */
 // The reader downloads a paper straight from Google Drive and shows it with
 // PDF.js 5 (the viewer inside Firefox), which draws highlights, pen marks and
@@ -6669,6 +6669,27 @@ const zoomBy = (factor, x, y) => {
   V.viewer.updateScale({ scaleFactor: factor, origin: [x == null ? r.left + r.width / 2 : x, y == null ? r.top + r.height / 2 : y], drawingDelay: 300 });
 };
 $('#vClose').addEventListener('click', closeReader);
+// Moving between the Reader and the Library: the tabs of the side you
+// arrive at (the groups' in the Library, the papers' in the Reader) fade in
+// from beside the switch, one after another. (However it's moved: the
+// viewer's hidden is watched.)
+function tabsIn(box) {
+  if (!box || !box.animate || box.offsetParent === null || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const left = box.getBoundingClientRect().right;
+  const items = [...box.querySelectorAll('#recentBtn, [role="tab"]')].filter(el => el.offsetParent !== null && el.getBoundingClientRect().left < left);
+  items.slice(0, 12).forEach((el, i) => el.animate(
+    [{ opacity: 0, transform: 'translateX(-10px)' }, { opacity: 1, transform: 'none' }],
+    { duration: 200, delay: i * 30, easing: 'cubic-bezier(0.2, 0, 0, 1)', fill: 'backwards' }));
+}
+{
+  const vw = $('#viewer');
+  let was = vw.hidden;
+  new MutationObserver(() => {
+    if (vw.hidden === was) return;
+    was = vw.hidden;
+    requestAnimationFrame(() => tabsIn(was ? $('#tabs') : $('#vTabs')));
+  }).observe(vw, { attributes: true, attributeFilter: ['hidden'] });
+}
 $('#vZoomIn').addEventListener('click', () => { if (V.doc) V.viewer.increaseScale(); });
 $('#vZoomOut').addEventListener('click', () => { if (V.doc) V.viewer.decreaseScale(); });
 // The zoom level is also the fit button: each tap goes on to the next of
