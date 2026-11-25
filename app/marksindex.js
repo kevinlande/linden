@@ -1,8 +1,8 @@
 ﻿// Linden: the PDFs' highlights and notes, indexed, for the library's search in "Notes & highlights".
 // (One of the app's scripts, which share one scope, loaded in order by
-// index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
+// index.html: files, library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/marksindex.js'] = '2026-11-25.05';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/marksindex.js'] = '2026-11-25.06';
 /* ------------------------------------------------------------ the index */
 // Each PDF's highlights (their words, page and note), read from the PDF
 // once and kept in LibLande/marks.json in Drive, so every device can
@@ -31,7 +31,7 @@ function mxPdfs() {
 }
 // (Downloaded here, not kept with the reader's recent papers.)
 async function mxBytes(fl) {
-  const r = await googleFetch('https:\/\/www.googleapis.com/drive/v3/files/' + encodeURIComponent(fl.id) + '?alt=media', {}, 180 * 1000);
+  const r = await FILES.get(fl.id, {}, 180 * 1000);
   if (!r.ok) { const err = new Error('Drive said ' + r.status); err.status = r.status; throw err; }
   return new Uint8Array(await r.arrayBuffer());
 }
@@ -40,7 +40,7 @@ async function mxBytes(fl) {
 // trouble (Drive busy, the sign-in lapsed, the network) is thrown, and the
 // run stops, to go on later.
 async function mxRead(x) {
-  const m = await googleFetch('https:\/\/www.googleapis.com/drive/v3/files/' + encodeURIComponent(x.f.id) + '?fields=size', {}, 30 * 1000);
+  const m = await FILES.meta(x.f.id, 'size', 30 * 1000);
   if (m.status === 404) return { k: x.e.k, at: Date.now(), h: [], bad: 1 };
   if (!m.ok) { const err = new Error('Drive said ' + m.status); err.status = m.status; throw err; }
   if (+(await m.json()).size > 60e6) return { k: x.e.k, at: Date.now(), h: [], big: 1 };
@@ -61,17 +61,16 @@ async function mxSave() {
 }
 // PDFs changed since the last time (Drive's changes): read again.
 async function mxChanges(d) {
-  const api = 'https:\/\/www.googleapis.com/drive/v3/changes';
   try {
     d.token = d.token || store.get('mxToken', null);
     if (!d.token) {
-      const r = await googleFetch(api + '/startPageToken');
+      const r = await FILES.changesStart();
       if (r.ok) { d.token = (await r.json()).startPageToken; store.set('mxToken', d.token); }
       return;
     }
     let tok = d.token;
     for (let i = 0; i < 100 && tok; i++) {
-      const r = await googleFetch(api + '?pageSize=1000&fields=nextPageToken,newStartPageToken,changes(fileId)&pageToken=' + encodeURIComponent(tok));
+      const r = await FILES.changes(tok);
       if (!r.ok) return;
       const j = await r.json();
       (j.changes || []).forEach(c => { if (d.files[c.fileId]) { delete d.files[c.fileId]; MX.gone.push({ id: c.fileId, at: Date.now() }); } });

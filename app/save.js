@@ -1,8 +1,8 @@
 ﻿// Linden: saving the marks: to Google Drive (checked first), kept on this device between uploads, and auto-save.
 // (One of the app's scripts, which share one scope, loaded in order by
-// index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
+// index.html: files, library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/save.js'] = '2026-11-25.05';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/save.js'] = '2026-11-25.06';
 /* ---- saving markup */
 // A new mark isn't in the PDF's annotations until PDF.js commits it (on a
 // change of tool), so anything done with a tool counts as possibly
@@ -312,14 +312,13 @@ async function uploadMarked(file, bytes, pages) {
   const within = Math.max(5 * 60 * 1000, bytes.byteLength / 40);
   let r;
   try {
-    r = await googleFetch('https:\/\/www.googleapis.com/upload/drive/v3/files/' + encodeURIComponent(file.id) + '?uploadType=media&fields=md5Checksum',
-      { method: 'PATCH', headers: { 'Content-Type': 'application/pdf' }, body: bytes }, within);
+    r = await FILES.replace(file.id, bytes, within);
   } catch (err) {
     // (Given up on, the upload may still have arrived: if Drive's file is
     // now exactly this size, it did, and its checksum is the new one;
     // otherwise the next save would take it for a change made elsewhere.)
     if (err.noAnswer || err instanceof TypeError) {
-      const now = await googleFetch('https:\/\/www.googleapis.com/drive/v3/files/' + encodeURIComponent(file.id) + '?fields=md5Checksum,size', {}, 45 * 1000)
+      const now = await FILES.meta(file.id, 'md5Checksum,size', 45 * 1000)
         .then(x => (x.ok ? x.json() : null)).catch(() => null);
       if (now && now.md5Checksum && Number(now.size) === bytes.byteLength && (!prev || now.md5Checksum !== prev)) return now.md5Checksum;
     }

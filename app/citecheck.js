@@ -1,8 +1,8 @@
 ﻿// Linden: Cite Check: a manuscript's citations against its references and the library.
 // (One of the app's scripts, which share one scope, loaded in order by
-// index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
+// index.html: files, library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/citecheck.js'] = '2026-11-25.05';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/citecheck.js'] = '2026-11-25.06';
 /* ------------------------------------------------------------ manuscript check */
 // A manuscript's citations checked: a Google Doc, or a Word file from Google
 // Drive or this device, read (never changed). Each APA author-date citation
@@ -311,7 +311,7 @@ async function msFromDrive(link) {
   }
   throw new Error('Linden reads Google Docs and Word files; ' + m.name + ' is neither.');
 }
-const MS_API = 'https:\/\/www.googleapis.com/drive/v3/files/';
+const MS_API = DRIVE_API + 'files/';
 async function msGet(url, opts = {}) {
   const r = await googleFetch(url, opts);
   if (r.status === 404) throw new Error('Google Drive can’t find that file (or it isn’t shared with your account).');

@@ -1,8 +1,8 @@
 ﻿// Linden: adding and editing, BibTeX pasted in, selecting several, updates, cite keys, versions, export, the keyboard.
 // (One of the app's scripts, which share one scope, loaded in order by
-// index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
+// index.html: files, library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/editing.js'] = '2026-11-25.05';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/editing.js'] = '2026-11-25.06';
 /* ------------------------------------------------------------ add and edit */
 const TYPE_FIELDS = {
   article: ['journal', 'volume', 'number', 'pages'],
@@ -710,25 +710,20 @@ async function lookupIntoForm() {
 // though its answer didn't.)
 async function uploadLanded(name, info, since) {
   try {
-    const q = `'${info.folderId}' in parents and name = '${name.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}' and trashed = false and createdTime > '${since}'`;
-    const r = await fetchWithin('https:\/\/www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,createdTime)&orderBy=createdTime desc', { headers: { Authorization: 'Bearer ' + info.token } }, 20000);
+    const r = await FILES.madeSince(info.folderId, name, since, info.token, 20000);
     if (!r.ok) return null;
     const f = ((await r.json()).files || [])[0];
     return f ? { id: f.id } : null;
   } catch (err) { return null; }
 }
 async function uploadPdf(file, name, info, again) {
-  const form = new FormData();
-  form.append('metadata', new Blob([JSON.stringify({ name, parents: [info.folderId], mimeType: 'application/pdf' })], { type: 'application/json' }));
-  form.append('file', file);
   // (A while for it to go, by its size, at a slow 25 KB a second, and at
   // least a minute; then given up, saying so.)
   const stop = window.AbortController ? new AbortController() : null, t0 = new Date(Date.now() - 5 * 60000).toISOString();
   const timer = stop && setTimeout(() => stop.abort(), Math.max(60000, (file.size || 0) / 25));
   let r;
   try {
-    r = await fetch('https:\/\/www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
-      Object.assign({ method: 'POST', headers: { Authorization: 'Bearer ' + info.token }, body: form }, stop ? { signal: stop.signal } : {}));
+    r = await FILES.create(info.folderId, name, file, info.token, stop && stop.signal);
   } catch (err) {
     // (It may have arrived all the same: one of that name, made since this
     // began, is it. Otherwise said, to try again.)
@@ -2359,11 +2354,7 @@ function openExport(dest) {
 }
 
 async function driveCopy(id, name, folderId, token) {
-  const r = await fetch('https:\/\/www.googleapis.com/drive/v3/files/' + encodeURIComponent(id) + '/copy?fields=id', {
-    method: 'POST',
-    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, parents: [folderId] }),
-  });
+  const r = await FILES.copy(id, name, folderId, token);
   if (!r.ok) throw new Error('Google Drive couldn\u2019t copy it (error ' + r.status + ')');
 }
 

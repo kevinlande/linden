@@ -1,8 +1,8 @@
 ﻿// Linden: messages, navigation, and starting up.
 // (One of the app's scripts, which share one scope, loaded in order by
-// index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
+// index.html: files, library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/start.js'] = '2026-11-25.05';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/start.js'] = '2026-11-25.06';
 // On GitHub Pages, every part of the app must be from the same version: a
 // part kept from an older one (the offline copy, served when the network
 // was slow) lacks what this page needs. Then the kept copies go, and the
@@ -172,7 +172,7 @@ if (window.LIBLANDE_PAGES) setTimeout(driveFolderName, 8000);
 // kept now, and Remove kept papers. The default: 200 in the app added to
 // the Dock or Home Screen (where Safari doesn't clear what's kept), 60 in
 // a browser tab.
-const KEEP_KEY = 'https:\/\/www.googleapis.com/drive/v3/files/__keep__', PAPERS_CACHE = 'liblande-papers';
+const KEEP_KEY = FILES.noteKey('keep'), PAPERS_CACHE = 'liblande-papers';
 const KEEP_MAX = { 60: ['Up to 60 papers, about 1.5 GB', 1.5e9, 60], 200: ['Up to 200 papers, about 5 GB', 5e9, 200], all: ['Every paper you open, while there\u2019s room', 0, 0] };
 // (What Remove (or Keep offline) in the #keepAsk dialog does.)
 const KEEP_ASK = { run: null };
@@ -191,12 +191,12 @@ async function keepSet(v) {
 // kept, oldest first), and apart, those kept for lists (lists: {n, bytes}).)
 async function keptPapers() {
   const c = await caches.open(PAPERS_CACHE), pins = await klPinned(c);
-  const all = (await c.keys()).filter(r => r.url.endsWith('?alt=media'));
+  const all = (await c.keys()).filter(r => FILES.idOfKey(r.url));
   const sizeOf = async r => { const x = await c.match(r); return Number(x && x.headers.get('X-LibLande-Size')) || 0; };   // keep-name
   const keys = [], sizes = [], lists = { n: 0, bytes: 0 };
   for (const r of all) {
     const s = await sizeOf(r);
-    if (pins.has(klId(r.url))) { lists.n++; lists.bytes += s; } else { keys.push(r); sizes.push(s); }
+    if (pins.has(FILES.idOfKey(r.url))) { lists.n++; lists.bytes += s; } else { keys.push(r); sizes.push(s); }
   }
   return { c, keys, sizes, n: keys.length, bytes: sizes.reduce((a, b) => a + b, 0), lists, pins };
 }
@@ -274,11 +274,10 @@ if ((window.LIBLANDE_PAGES || window.LIBLANDE_TEST) && window.caches && $('#keep
 // PIN_KEY: not counted in the limit, never let go for it. A list over 200
 // papers or about 2 GB is asked about first. Or the whole library
 // (KL.lists.all): every paper, the Reading list's and the groups' first.
-const PIN_KEY = 'https:\/\/www.googleapis.com/drive/v3/files/__pinned__';
+const PIN_KEY = FILES.noteKey('pinned');
 const KL = { lists: store.get('offlineLists', { rl: false, groups: [] }), running: false, again: false, done: 0, total: 0, failed: 0, t: 0, note: '',
   // (Papers that couldn't be downloaded: not tried again for a day.)
   skip: new Map() };
-const klId = url => { const m = /\/files\/([^/?]+)\?/.exec(url); return m ? decodeURIComponent(m[1]) : ''; };
 async function klPinned(c) {
   try { const r = await c.match(PIN_KEY); if (r) return new Set((await r.json()).ids || []); } catch (e) { /* none */ }
   return new Set();
@@ -359,9 +358,9 @@ async function klSync() {
       const c = await caches.open(PAPERS_CACHE), files = klTargets(), ids = new Set(files.map(f => f.id));
       // (Those no longer kept for a list: removed, so they don't push out
       // the papers you opened yourself.)
-      for (const id of await klPinned(c)) if (!ids.has(id)) { await c.delete(klUrl(id)); await c.delete(klUrl(id).replace('?alt=media', '?fields=md5Checksum')); }
+      for (const id of await klPinned(c)) if (!ids.has(id)) { await c.delete(FILES.key(id)); await c.delete(FILES.sumKey(id)); }
       await c.put(PIN_KEY, new Response(JSON.stringify({ ids: [...ids] }), { headers: { 'Content-Type': 'application/json' } }));
-      const have = new Set((await c.keys()).filter(r => r.url.endsWith('?alt=media')).map(r => klId(r.url)));
+      const have = new Set((await c.keys()).map(r => FILES.idOfKey(r.url)).filter(Boolean));
       const now = Date.now(), todo = files.filter(f => !have.has(f.id) && !(KL.skip.get(f.id) > now - 864e5));
       KL.total = todo.length; KL.done = 0; KL.failed = 0;
       klProgress();
@@ -389,14 +388,13 @@ async function klSync() {
     if ($('#keepSec') && !$('#keepSec').classList.contains('off-tab') && !$('#setup').hidden) keepShow().catch(() => {});
   }
 }
-const klUrl = id => 'https:\/\/www.googleapis.com/drive/v3/files/' + encodeURIComponent(id) + '?alt=media';
 // One paper: fetched with this device's token (kept by sw.js on its way:
 // read through and let go, not held here), then checked for. true: kept;
 // false: not (to skip for a day); 'stop': signed out, or no room.
 async function klFetch(c, f) {
-  const url = klUrl(f.id), sw = navigator.serviceWorker && navigator.serviceWorker.controller;
+  const url = FILES.key(f.id), sw = navigator.serviceWorker && navigator.serviceWorker.controller;
   let r;
-  try { r = await fetch(url, { headers: { Authorization: 'Bearer ' + KL.tok } }); } catch (e) { return false; }
+  try { r = await FILES.getWith(f.id, KL.tok); } catch (e) { return false; }
   if (r.status === 401 || r.status === 403) return 'stop';
   if (!r.ok) return false;
   try {
@@ -743,8 +741,7 @@ async function download() {
   const get = async info => {
     const stop = window.AbortController ? new AbortController() : null, timer = stop && setTimeout(() => stop.abort(), 180000);
     try {
-      const r = await fetch('https:\/\/www.googleapis.com/drive/v3/files/' + encodeURIComponent(info.id) + '?alt=media',
-        Object.assign({ headers: { Authorization: 'Bearer ' + info.token } }, stop ? { signal: stop.signal } : {}));
+      const r = await FILES.getWith(info.id, info.token, stop ? { signal: stop.signal } : {});
       const body = r.ok ? await r.arrayBuffer() : null;
       return { ok: r.ok, status: r.status, arrayBuffer: async () => body };
     } finally { if (timer) clearTimeout(timer); }

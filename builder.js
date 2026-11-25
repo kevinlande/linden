@@ -20,7 +20,7 @@
  */
 (function (root) {
   'use strict';
-  if (root.document) (root.LIBLANDE_PARTS = root.LIBLANDE_PARTS || {}).builder = '2026-11-25.05';
+  if (root.document) (root.LIBLANDE_PARTS = root.LIBLANDE_PARTS || {}).builder = '2026-11-25.06';
   const FOLDER = 'application/vnd.google-apps.folder';
   // (The folder in Drive: "Linden" for a library made since the rename
   // (2026-11-24), "LibLande" for one made before, which keeps its name;   // keep-name

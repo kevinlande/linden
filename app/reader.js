@@ -1,8 +1,8 @@
 ﻿// Linden: the PDF reader: pages, marks, tools, saving, the sidebar.
 // (One of the app's scripts, which share one scope, loaded in order by
-// index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
+// index.html: files, library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/reader.js'] = '2026-11-25.05';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/reader.js'] = '2026-11-25.06';
 /* ------------------------------------------------------------ PDF reader */
 // The reader downloads a paper straight from Google Drive and shows it with
 // PDF.js 5 (the viewer inside Firefox), which draws highlights, pen marks and
@@ -266,10 +266,10 @@ async function fetchAheadNow() {
   const list = [...new Set(next.concat(newest))].filter(e => e && readablePdfs(e).length).slice(0, AHEAD_MOST);
   const kept = await caches.open('liblande-papers');
   for (const e of list) {
-    const f = readablePdfs(e)[0], url = 'https:\/\/www.googleapis.com/drive/v3/files/' + encodeURIComponent(f.id) + '?alt=media';
+    const f = readablePdfs(e)[0], url = FILES.key(f.id);
     if (await kept.match(url)) continue;
     if (isOffline() || document.hidden || !tokenCache || Date.now() - tokenCache.at > 50 * 60 * 1000) return;
-    const r = await fetch(url, { headers: { Authorization: 'Bearer ' + tokenCache.token } });
+    const r = await FILES.getWith(f.id, tokenCache.token);
     if (!r.ok) return;
     const bytes = await r.arrayBuffer();
     // (Kept by sw.js on its way here; here, if it isn't running yet.)
@@ -312,20 +312,18 @@ async function countPdfPages(fl) {
   const lib = await loadPdfJs(), id = fl.id;
   let bytes = recentPdfs.get(id) || null;
   if (!bytes && window.caches) {
-    const kept = await caches.match('https:\/\/www.googleapis.com/drive/v3/files/' + encodeURIComponent(id) + '?alt=media').catch(() => null);
+    const kept = await caches.match(FILES.key(id)).catch(() => null);
     if (kept) bytes = new Uint8Array(await kept.arrayBuffer());
   }
   let task;
   if (bytes) task = openPdf(lib, { data: bytes.slice(0) });
   else {
-    const url = 'https:\/\/www.googleapis.com/drive/v3/files/' + encodeURIComponent(id);
-    const auth = async () => ({ Authorization: 'Bearer ' + await driveToken() });
-    const meta = await fetch(url + '?fields=size', { headers: await auth() });
+    const meta = await FILES.metaWith(id, 'size', await driveToken());
     if (!meta.ok) throw new Error('Drive answered ' + meta.status);
     const size = +(await meta.json()).size;
     if (!size) throw new Error('no size');
     const part = async (a, b) => {
-      const r = await fetch(url + '?alt=media', { headers: Object.assign(await auth(), { Range: 'bytes=' + a + '-' + (b - 1) }) });
+      const r = await FILES.getWith(id, await driveToken(), { headers: { Range: 'bytes=' + a + '-' + (b - 1) } });
       if (!r.ok) throw new Error('Drive answered ' + r.status);
       return new Uint8Array(await r.arrayBuffer());
     };
@@ -355,7 +353,7 @@ function trimRecentPdfs() {
 const NET_MS = { get first() { return window.LIBLANDE_NET_MS || 25000; }, get stall() { return window.LIBLANDE_NET_MS || 20000; } };
 async function getPdfBytes(file, onProgress) {
   if (recentPdfs.has(file.id)) return recentPdfs.get(file.id);
-  const url = 'https:\/\/www.googleapis.com/drive/v3/files/' + encodeURIComponent(file.id) + '?alt=media';
+  const url = FILES.key(file.id);
   // (Known to be offline: the copy kept here at once, Drive not tried.)
   const offline = isOffline();
   try { if (offline && window.caches && await caches.match(url).catch(() => null)) throw Object.assign(new Error('offline'), { noAnswer: true }); return await getPdfBytesFrom(url, file, onProgress); } catch (err) {
@@ -365,7 +363,7 @@ async function getPdfBytes(file, onProgress) {
       // save finds the difference and offers Combine, never writing over
       // Drive's newer copy. Not kept for opening again: Drive's next time.)
       const bytes = new Uint8Array(await kept.arrayBuffer());
-      const sum = await caches.match('https:\/\/www.googleapis.com/drive/v3/files/' + encodeURIComponent(file.id) + '?fields=md5Checksum').then(x => (x ? x.json() : null)).catch(() => null);
+      const sum = await caches.match(FILES.sumKey(file.id)).then(x => (x ? x.json() : null)).catch(() => null);
       bytes.keptMd5 = (sum && sum.md5Checksum) || 'kept-copy';
       return bytes;
     }
@@ -412,7 +410,7 @@ async function getPdfBytesFrom(url, file, onProgress) {
     }
   } catch (err) { throw stop && stop.signal.aborted ? noAnswer() : err; } finally { clearTimeout(timer); }
   if (keptCopy) {
-    const sum = await caches.match('https:\/\/www.googleapis.com/drive/v3/files/' + encodeURIComponent(file.id) + '?fields=md5Checksum').then(x => (x ? x.json() : null)).catch(() => null);
+    const sum = await caches.match(FILES.sumKey(file.id)).then(x => (x ? x.json() : null)).catch(() => null);
     bytes.keptMd5 = (sum && sum.md5Checksum) || 'kept-copy';
     return bytes;
   }
@@ -519,8 +517,7 @@ async function fetchWithin(url, opts, ms) {
   } finally { clearTimeout(timer); }
 }
 async function pdfMd5(file) {
-  const url = 'https:\/\/www.googleapis.com/drive/v3/files/' + encodeURIComponent(file.id) + '?fields=md5Checksum';
-  const r = await googleFetch(url, {}, 45 * 1000);
+  const r = await FILES.meta(file.id, 'md5Checksum', 45 * 1000);
   if (!r.ok) return null;
   return (await r.json()).md5Checksum || null;
 }

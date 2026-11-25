@@ -1,8 +1,8 @@
 ﻿// Linden: the library: data, the reading list, groups, search, the list and the details.
 // (One of the app's scripts, which share one scope, loaded in order by
-// index.html: library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
+// index.html: files, library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/library.js'] = '2026-11-25.05';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/library.js'] = '2026-11-25.06';
 const $ = s => document.querySelector(s);
 // The version, as the page gives it (index.html, the loading screen): the
 // one place the app's scripts take it from.
@@ -233,9 +233,7 @@ function namesWithInitials(names) {
   return l[0] + ' et al.';
 }
 const splitKw = s => (s || '').split(/[;,]/).map(x => x.trim()).filter(Boolean);
-const driveUrl = f => f.id
-  ? 'https:\/\/drive.google.com/file/d/' + encodeURIComponent(f.id) + '/view'
-  : 'https:\/\/drive.google.com/drive/search?q=' + encodeURIComponent('"' + f.n.replace(/\.[^.]+$/, '').replace(/[\s,]+\d*\s*$/, '') + '"');
+const driveUrl = f => FILES.link(f);
 
 function prep(e) {
   const f = e.f;
@@ -2542,9 +2540,9 @@ async function refreshSaved() {
   if (!window.LIBLANDE_PAGES || !window.caches) return;
   try {
     const c = await caches.open('liblande-papers'), keys = await c.keys();
-    const ids = new Set(keys.map(r => (/\/files\/([^/?]+)\?alt=media/.exec(r.url) || [])[1]).filter(Boolean).map(decodeURIComponent));
+    const ids = new Set(keys.map(r => FILES.idOfKey(r.url)).filter(Boolean));
     let pins = new Set();
-    try { const r = await c.match('https:\/\/www.googleapis.com/drive/v3/files/__pinned__'); if (r) pins = new Set((await r.json()).ids || []); } catch (err) { /* none */ }
+    try { const r = await c.match(FILES.noteKey('pinned')); if (r) pins = new Set((await r.json()).ids || []); } catch (err) { /* none */ }
     if ([...ids].join() !== [...SAVED].join() || [...pins].join() !== [...PINNED].join()) {
       // (The details drawn again only if the selected one's mark changed.)
       const sel = state.selKey && BYKEY.get(state.selKey), was = sel ? keptBadge(sel) : '';
@@ -2570,7 +2568,7 @@ async function reachCheck() {
     // (Google Drive's own address, which Linden needs: any answer will do,
     // as it isn't signed. Wi-Fi asking you to sign in to it can't answer
     // for Google over a secure connection, so that counts as offline.)
-    try { await (window.LIBLANDE_REACH || fetch)('https:\/\/www.googleapis.com/drive/v3/about?fields=kind', { mode: 'no-cors', cache: 'no-store', credentials: 'omit', signal: ctl.signal }); }
+    try { await (window.LIBLANDE_REACH || fetch)(FILES.reachUrl, { mode: 'no-cors', cache: 'no-store', credentials: 'omit', signal: ctl.signal }); }
     // (Not answered, but Drive itself answered a moment ago: online.)
     catch (err) { ok = Date.now() - (window.LIBLANDE_NET_OK_AT || 0) < 20000; }
     clearTimeout(give);
