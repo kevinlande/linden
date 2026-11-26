@@ -2,7 +2,7 @@
 // (One of the app's scripts, which share one scope, loaded in order by
 // index.html: files, library, apa, csl, marks, reader, save, contents, bookmarks, pdflib, editing, cite, notes, citecheck, newpapers, ocr, split, outline, findpdf, titlesearch, keywords, chapters, related, marksindex, inbox, trash, citecard, tour, start.)
 'use strict';
-(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/reader.js'] = '2026-11-25.06';
+(self.LIBLANDE_PARTS = self.LIBLANDE_PARTS || {})['app/reader.js'] = '2026-11-26.01';
 /* ------------------------------------------------------------ PDF reader */
 // The reader downloads a paper straight from Google Drive and shows it with
 // PDF.js 5 (the viewer inside Firefox), which draws highlights, pen marks and
@@ -3768,7 +3768,11 @@ async function markQuote(id, how, ready) {
 new MutationObserver(list => {
   for (const m of list) for (const n of m.addedNodes) {
     if (n.nodeType !== 1) continue;
-    if (n.matches('.editToolbar, .editToolbar *') || n.querySelector('.editToolbar')) { iconEditToolbar(n.closest('.editToolbar') || n); toolbarAtTap(); }
+    if (n.matches('.editToolbar, .editToolbar *') || n.querySelector('.editToolbar')) {
+      iconEditToolbar(n.closest('.editToolbar') || n);
+      (n.closest('.editToolbar') ? [n.closest('.editToolbar')] : n.querySelectorAll('.editToolbar')).forEach(tb => TB_SIZE.observe(tb));
+      toolbarAtTap();
+    }
     if (n.matches('.annotationEditorLayer > .highlightEditor')) decorateLines();
   }
 }).observe($('#vPages'), { childList: true, subtree: true });
@@ -3790,20 +3794,41 @@ function toolbarAtTap() {
   tb.dataset.tap = String(TAP.t);
   // Centred on the tap, a little below it (in the mark's own units, since
   // it moves and zooms with the mark); then, once it has its size, kept on
-  // screen, above the tap if there's no room below.
+  // screen (fitMarkBar).
   const k = r.width / (div.offsetWidth || r.width) || 1;
   tb.style.insetInlineEnd = 'auto';
   tb.style.translate = '-50% 0';
   tb.style.left = (TAP.x - r.left) / k + 'px';
   tb.style.top = (TAP.y + 16 - r.top) / k + 'px';
-  requestAnimationFrame(() => {
-    const b = tb.getBoundingClientRect();
-    if (!b.width) return;
-    const dx = b.left < 8 ? 8 - b.left : b.right > window.innerWidth - 8 ? window.innerWidth - 8 - b.right : 0;
-    if (dx) tb.style.left = (TAP.x + dx - r.left) / k + 'px';
-    if (b.bottom > window.innerHeight - 8) tb.style.top = (TAP.y - 16 - b.height - r.top) / k + 'px';
-  });
+  tb.llTap = { x: TAP.x, y: TAP.y, nx: 0 };
+  requestAnimationFrame(() => fitMarkBar(tb));
 }
+// A mark's toolbar kept within the window, whenever it shows: PDF.js makes
+// it (on the press, say) while it's still hidden, with no size to measure,
+// and it shows a moment later. Moved sideways by its translate, so it works
+// wherever it was put; above the tap if there's no room below it (or
+// above the notes under the page).
+function fitMarkBar(tb) {
+  const div = tb.parentElement;
+  if (!div || !tb.isConnected) return;
+  const b = tb.getBoundingClientRect();
+  if (!b.width) return;
+  const r = div.getBoundingClientRect(), k = r.width / (div.offsetWidth || r.width) || 1;
+  const at = tb.llTap || (tb.llTap = { x: null, y: null, nx: 0 });
+  const W = window.innerWidth;
+  const dx = b.left < 8 || b.width > W - 16 ? 8 - b.left : b.right > W - 8 ? W - 8 - b.right : 0;
+  if (Math.abs(dx) >= 1) {
+    at.nx += dx / k;
+    tb.style.translate = 'calc(' + (at.x != null ? '-50%' : '0px') + ' + ' + at.nx + 'px) 0';
+  }
+  if (at.y == null) return;
+  const peek = $('#vPeek'), pr = peek && !peek.hidden ? peek.getBoundingClientRect() : null;
+  const floor = Math.min(window.innerHeight, pr && pr.height ? pr.top : Infinity) - 8;
+  if (b.bottom > floor && at.y - 16 - b.height > 8) tb.style.top = (at.y - 16 - b.height - r.top) / k + 'px';
+}
+const TB_SIZE = new ResizeObserver(list => {
+  for (const e of list) if (e.contentRect.width) { toolbarAtTap(); fitMarkBar(e.target); }
+});
 /* ---- picking up a mark when no tool is on */
 // A tap on a mark (the Pencil, a finger or the mouse) switches to the select
 // tool with that mark picked up and its toolbar showing; a tap on empty
@@ -3851,6 +3876,11 @@ async function pickUpMark(hit, x, y, back, bar) {
   if (V.tool === 'select' && V.fromRead) setTool(V.fromRead === true ? 'read' : V.fromRead);
   toast('That mark can\u2019t be edited here.', 3000);
 }
+function tapOnSelection(x, y) {
+  const sel = getSelection();
+  if (sel.isCollapsed || !sel.rangeCount) return false;
+  return [...sel.getRangeAt(0).getClientRects()].some(q => x >= q.left - 4 && x <= q.right + 4 && y >= q.top - 4 && y <= q.bottom + 4);
+}
 (() => {
   const sc = $('#vScroll');
   let down = null;
@@ -3863,7 +3893,10 @@ async function pickUpMark(hit, x, y, back, bar) {
     down = null;
     if (!d || V.tool !== 'read' || LP.took) return;
     if (Math.hypot(ev.clientX - d.x, ev.clientY - d.y) > 8 || Date.now() - d.t > 600) return;
-    if (!getSelection().isCollapsed) return;
+    // (A tap on a selection is the selection's. One left elsewhere -- the
+    // words just highlighted, say, which the iPad keeps selected until
+    // after this tap -- doesn't stop it.)
+    if (tapOnSelection(d.x, d.y)) return;
     const hit = readMarkAt(d.x, d.y);
     if (!hit) return;
     getSelection().removeAllRanges();
@@ -6519,12 +6552,21 @@ $('#vScroll').addEventListener('pointerup', ev => {
   // mark, which it also picks up, or ending a selection.)
   const hiddenNow = $('#viewer').classList.contains('bars-hidden');
   if (ev.target.closest('a, button, .editToolbar') || LP.took) return;
+  const mark = !!readMarkAt(ev.clientX, ev.clientY);
   if (!hiddenNow) {
     if (ev.target.closest('.annotationLayer section')) return;
     // Not when the tap ends a text selection.
     if (!getSelection().isCollapsed) return;
     // A tap on a mark picks it up (see above), rather than the bars.
-    if (readMarkAt(ev.clientX, ev.clientY)) return;
+    if (mark) return;
+  }
+  // Hidden, a tap on a mark brings them back, and is the mark's: not
+  // taken for a link or citation beside it.
+  if (mark) {
+    clearTimeout(BARS.tapTimer);
+    BARS.lastTap = null;
+    BARS.tapTimer = setTimeout(() => barsHidden(false), 300);
+    return;
   }
   // A tap just beside a link within the paper (they can be tiny, like a
   // footnote's star) is a tap on the link, not on the page.
